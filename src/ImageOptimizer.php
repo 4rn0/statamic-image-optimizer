@@ -302,19 +302,19 @@ class ImageOptimizer
 
         if (in_array(PHP_OS, ['Linux'])) {
 
-            return realpath(__DIR__  . '/../bin/linux/' . $name);
+            return realpath(__DIR__  . '/../bin/linux-' . (PHP_INT_SIZE === 8 ? 'x86_64' : 'i686') . '/' . $name);
 
         }
 
         if (in_array(PHP_OS, ['Darwin'])) {
 
-            return realpath(__DIR__  . '/../bin/mac/' . $name);
+            return realpath(__DIR__  . '/../bin/darwin-' . (PHP_INT_SIZE === 8 ? 'x86_64' : 'i386') . '/' . $name);
 
         }
 
         if (in_array(PHP_OS, ['WIN32', 'WINNT', 'Windows'])) {
 
-            return realpath(__DIR__  . '/../bin/win/' . $name . '.exe');
+            return realpath(__DIR__  . '/../bin/windows/' . $name . '.exe');
 
         }
 

@@ -46,7 +46,7 @@
 </div>
 
 <h3 class="mt-5 mb-1 font-bold text-lg">{{ __('imageoptimizer::cp.optimizers') }}</h3>
-<p class="text-sm text-grey mb-2">{!! __('imageoptimizer::cp.documentation', ['url' => 'https://statamic.com/addons/4rn0/imageoptimizer/docs']) !!}</p>
+<p class="text-sm text-grey mb-2">{!! __('imageoptimizer::cp.documentation', ['url' => 'https://statamic.com/addons/4rn0/imageoptimizer-v3/docs']) !!}</p>
 
 <div class="card p-0">
 

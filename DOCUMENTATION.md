@@ -1,5 +1,4 @@
 ## Install
-
 First, install the addon using composer  
 
 ```composer require 4rn0/statamic-v3-image-optimizer```
@@ -9,21 +8,18 @@ Then, publish the assets by running
 ```php artisan vendor:publish --provider="Arnohoogma\StatamicImageOptimizer\ServiceProvider" --force```
 
 ## Configuration
-
 ImageOptimizer comes with a configuration file, which you can find at `config/statamic/imageoptimizer.php` after publishing the assets.  
 
-In this file you can configure whether the addon should automatically optimize image Assets, whether it should optimize Glide image manipulations, whether it should log detailed information about those optimizations and which optimizer commands it should run on which types of images.  
+In this file you can configure whether the addon should automatically optimize *image Assets*, whether it should optimize *Glide image manipulations*, whether it should *log detailed information* about those optimizations and which optimizer commands it should run on which types of images.  
 
 ## Usage
+This addon dynamically adds a *Fieldtype* to the Asset editor, with which you can the image optimization gains and run optimizations on it.  
 
-This addon dynamically adds a Fieldtype to the Asset editor, with which you can the image optimization gains and run optimizations on it.  
+It also adds a *Utility* screen, where you can view all optimization gains as well as the addon's current settings and configured optimizers. It provides an option to run the optimization process on all Assets again.  
 
-It also adds a Utility screen, where you can view all optimization gains as well as the addon's current settings and configured optimizers. It provides an option to run the optimization process on all Assets again.  
-
-Finally, it adds a `please optimize:images` command which optimizes all your existing image Assets and clears the Glide cache.  
+Finally, it adds a `please optimize:images` *Command* which optimizes all your existing image Assets and clears the Glide cache.  
 
 ## Optimization tools
-
 The addon will use the following optimizers if they are available on your system:
 
 - [JpegOptim](http://freecode.com/projects/jpegoptim)
@@ -64,17 +60,17 @@ ImageOptimizer will try to find the executables in the following paths on your s
 
 The addon includes precompiled versions of these optimizers for Linux, MacOS and Windows. If an optimizer is not available on your server it will try to use the included version. This will work with most servers and configurations, but if for some reason it doesn't, you should try to install the optimizers using the above instructions.
 
-You can see the 'status' of each optimizer command in the addon's utility screen. A green dot means the optimizer has been found on the server. An orange dot means the optimizer has not been found, so ImageOptimizer will try to use the included version during image optimizations. A red dot means the optimizer has not been found and a precompiled version of it is not available.  
+You can see the 'status' of each optimizer command in the addon's utility screen. A *green dot* means the optimizer has been found on the server. An *orange dot* means the optimizer has not been found, so ImageOptimizer will try to use the included version during image optimizations. A *red dot* means the optimizer has not been found and a precompiled version of it is not available.  
 
 ## Customization
-
-Aside from using the included optimizers it is also possible to change their default configuration or add some custom optimization tools in the addon's configuration file. For each optimizer you will have to provide the mimetype of the images you want it to optimize and the command you would like to run on the server.
+Aside from using the included optimizers it is also possible to change their default configuration or add some custom optimization tools in the addon's configuration file. For each optimizer you will have to provide the mimetype of the images you want it to optimize and the command and arguments you would like to run on the server.
 
 You can use `:file` to reference the full path to the image you are optimizing and `:temp` to use a temporary output file if the optimizer requires it. The contents of the `:temp` file will automatically be copied back to the original file after the optimization.
 
 So for example, if you would like to use MozJPEG you could add the following to the configuration file:
 
-```[
+```php
+[
 
     'executable' => 'mozjpeg',
     'arguments'  => '-quality 85 -optimize -outfile :temp :file',
