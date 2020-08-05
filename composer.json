@@ -1,0 +1,29 @@
+{
+    "name": "4rn0/statamic-v3-image-optimizer",
+    "description": "Statamic v3 Image Optimizer addon",
+    "type": "statamic-addon",
+    "autoload": {
+        "psr-4": {
+            "Arnohoogma\\StatamicImageOptimizer\\": "src"
+        }
+    },
+    "authors": [
+        {
+            "name": "Arno Hoogma"
+        }
+    ],
+    "support": {
+        "email": "arno@hoog.ma"
+    },
+    "extra": {
+        "statamic": {
+            "name": "Statamic v3 Image Optimizer",
+            "description": "Statamic v3 Image Optimizer addon"
+        },
+        "laravel": {
+            "providers": [
+                "Arnohoogma\\StatamicImageOptimizer\\ServiceProvider"
+            ]
+        }
+    }
+}
