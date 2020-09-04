@@ -85,7 +85,7 @@ export default {
 
         doOptimize() {
 
-            let url  = cp_url('utilities/imageoptimizer/' + this.list[this.index] + '?statistics=1');
+        	let url  = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + '?statistics=1');
             	url += (this.index == this.list.length - 1) ? '&clearcache=1' : '';
 
             this.$axios.post(url, {}, this.toEleven).then(response => {

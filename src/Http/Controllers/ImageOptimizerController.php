@@ -32,12 +32,14 @@ class ImageOptimizerController extends CpController {
 
     }
 
-    public function optimize(Request $request, $asset_container, $asset)
+    public function optimize(Request $request, $asset)
     {
 
-    	$optimizer = new ImageOptimizer();
+        $optimizer = new ImageOptimizer();
 
+        $asset = Asset::find(base64_decode($asset));
     	$asset = $optimizer->optimizeAsset($asset);
+
         $response = ['asset' => new AssetResource($asset)];
 
         if ($request->has('statistics')) {

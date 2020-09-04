@@ -85,7 +85,7 @@ export default {
 
         doOptimize() {
 
-            const url = cp_url('utilities/imageoptimizer/' + this.asset.id);
+            const url = cp_url('utilities/imageoptimizer/' + btoa(this.asset.id));
 
             this.$axios.post(url, {}, this.toEleven).then(response => {
 
