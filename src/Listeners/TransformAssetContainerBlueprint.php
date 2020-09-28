@@ -10,7 +10,7 @@ class TransformAssetContainerBlueprint
     public function handle(AssetContainerBlueprintFound $event)
     {
         
-    	if (request()->route()->getName() === 'statamic.cp.assets.show')
+    	if (request()->route() && request()->route()->getName() === 'statamic.cp.assets.show')
         {
 
     		$event->blueprint->ensureField('imageoptimizer', [
