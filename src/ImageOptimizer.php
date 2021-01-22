@@ -277,7 +277,9 @@ class ImageOptimizer
         $binary = basename($name);
 
         return $finder->find($binary, $included, [
-
+            
+            '/opt/homebrew/bin',
+            '/opt/homebrew/sbin',
             '/usr/local',
             '/usr/local/bin',
             '/usr/bin',
