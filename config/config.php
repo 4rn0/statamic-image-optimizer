@@ -83,6 +83,30 @@ return [
 
         ]
 
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Paths
+    |--------------------------------------------------------------------------
+    |
+    | Search for optimizers in the following paths
+    |
+    */
+
+    'paths' => [
+
+        '/opt/homebrew/bin',
+        '/opt/homebrew/sbin',
+        '/usr/local',
+        '/usr/local/bin',
+        '/usr/bin',
+        '/usr/sbin',
+        '/usr/local/bin',
+        '/usr/local/sbin',
+        '/bin',
+        '/sbin'
+
     ]
 
 ];

@@ -45,7 +45,7 @@ brew install pngquant
 brew install gifsicle
 ```
 
-ImageOptimizer will try to find the executables in the following paths on your server, so please make sure you install the optimizers within these paths:
+ImageOptimizer will try to find the executables in the following paths on your server, so please make sure you install the optimizers within these paths. You can customize these paths in the configuration file.
 
     /usr/local
     /usr/local/bin
