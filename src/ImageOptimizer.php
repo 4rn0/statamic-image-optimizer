@@ -276,7 +276,20 @@ class ImageOptimizer
         $included = $this->findBundledBinary($name);
         $binary = basename($name);
 
-        return $finder->find($binary, $included, config('statamic.imageoptimizer.paths'));
+        return $finder->find($binary, $included, config('statamic.imageoptimizer.paths', [
+
+            '/opt/homebrew/bin',
+            '/opt/homebrew/sbin',
+            '/usr/local',
+            '/usr/local/bin',
+            '/usr/bin',
+            '/usr/sbin',
+            '/usr/local/bin',
+            '/usr/local/sbin',
+            '/bin',
+            '/sbin'
+
+        ]));
 
     }
 
