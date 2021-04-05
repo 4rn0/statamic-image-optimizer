@@ -13,8 +13,8 @@
 
 <image_optimizer-utility :stats='@json($stats)'>
 
-	<div class="h-12 w-12 mr-2">	
-		@svg('assets')
+	<div class="h-12 w-12 mr-2">
+		@cp_svg('assets')
 	</div>
 
 </image_optimizer-utility>
@@ -25,7 +25,7 @@
 <div class="card p-0">
 
     <table class="data-table">
-        
+
         <tr>
             <th class="pl-2 py-1 w-1/4">{{ __('imageoptimizer::cp.asset') }}</th>
             <td><code class="text-grey">{{ config('statamic.imageoptimizer.assets') ? 'true' : 'false' }}</code></td>
@@ -67,19 +67,19 @@
 		<tbody>
 
 			@foreach ($optimizers as $optimizer)
-			
-			<tr>	        		
-			
+
+			<tr>
+
 				<td>
 
 					@if (!$optimizer['found'])
-					<span class="little-dot bg-red mr-1"></span> 
+					<span class="little-dot bg-red mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_no', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@elseif ($str->contains($optimizer['found'], '4rn0'))
-					<span class="little-dot bg-orange mr-1"></span> 
+					<span class="little-dot bg-orange mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_maybe', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@else
-					<span class="little-dot bg-green mr-1"></span> 
+					<span class="little-dot bg-green mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_yes', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@endif
 
