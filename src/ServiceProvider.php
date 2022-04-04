@@ -48,13 +48,13 @@ class ServiceProvider extends AddonServiceProvider
         
         parent::boot();
 
-        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'imageoptimizer');
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'imageoptimizer');
         $this->loadViewsFrom(__DIR__ . '/../resources/views/', 'imageoptimizer');
 
         if ($this->app->runningInConsole())
         {
             
-            $this->publishes([__DIR__ . '/../lang' => resource_path('lang/vendor/arnohoogma/statamic-image-optimizer/')], 'lang');
+            $this->publishes([__DIR__ . '/../resources/lang' => resource_path('lang/vendor/arnohoogma/statamic-image-optimizer/')], 'lang');
             $this->publishes([__DIR__ . '/../config/config.php' => config_path('statamic/imageoptimizer.php')], 'config');
 
         }
