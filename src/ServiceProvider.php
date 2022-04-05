@@ -19,8 +19,6 @@ use Statamic\Statamic;
 class ServiceProvider extends AddonServiceProvider
 {
 
-	protected $publishAfterInstall = false;
-
     protected $scripts = [
 
         __DIR__ . '/../public/js/app.js'
@@ -58,13 +56,8 @@ class ServiceProvider extends AddonServiceProvider
 
         if ($this->app->runningInConsole()) {
 
-            $this->publishes([
-				__DIR__ . '/../resources/lang' => resource_path('lang/vendor/imageoptimizer/')
-			], 'imageoptimizer-lang');
-
-            $this->publishes([
-				__DIR__ . '/../config/config.php' => config_path('statamic/imageoptimizer.php')
-			], 'imageoptimizer-config');
+            $this->publishes([__DIR__ . '/../resources/lang' => resource_path('lang/vendor/imageoptimizer/')]);
+            $this->publishes([__DIR__ . '/../config/config.php' => config_path('statamic/imageoptimizer.php')]);
 
         }
 
