@@ -3,7 +3,7 @@
     <div v-if="isImage">
 
         <div v-if="loading">
-            
+
             <loading-graphic class="mt-1" />
 
         </div>
@@ -12,18 +12,18 @@
 
 	    	<div v-if="asset.values.imageoptimizer">
 
-	    		{{ translations['imageoptimizer::cp.original'] }}: {{ getBytes(asset.values.imageoptimizer.original_size) }}<br>
-	    		{{ translations['imageoptimizer::cp.reduced'] }}: {{ getBytes(savings) }} ({{ percentage }}%)<br>
+	    		{{ __('imageoptimizer::cp.original') }}: {{ getBytes(asset.values.imageoptimizer.original_size) }}<br>
+	    		{{ __('imageoptimizer::cp.reduced') }}: {{ getBytes(savings) }} ({{ percentage }}%)<br>
 
-	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ translations['imageoptimizer::cp.optimize-again'] }}</a>
+	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</a>
 
 	    	</div>
 
 	    	<div v-else>
 
-	    		{{ translations['imageoptimizer::cp.not-optimized'] }}<br>
+	    		{{ __('imageoptimizer::cp.not-optimized') }}<br>
 
-	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ translations['imageoptimizer::cp.optimize'] }}</a>
+	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</a>
 
 	    	</div>
 
@@ -35,12 +35,11 @@
 
 <script>
 
-import Translations from '../mixins/translations';
 import Bytes from '../mixins/bytes';
 
 export default {
 
-    mixins: [Bytes, Fieldtype, Translations],
+	mixins: [Bytes, Fieldtype],
 
     created() {
 
@@ -51,7 +50,7 @@ export default {
     data() {
 
         return {
-            
+
             assetEditor: false,
             asset: false,
             loading: false
@@ -69,7 +68,7 @@ export default {
             while (parent) {
 
                 if (parent.asset) {
-                    
+
                     this.assetEditor = parent;
                     this.asset = parent.asset;
 
@@ -94,9 +93,9 @@ export default {
 
             })
             .catch(error => {
-				
+
 				this.loading = false;
-				            	
+
             });
 
             this.loading = true;

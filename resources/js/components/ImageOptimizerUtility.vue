@@ -3,19 +3,19 @@
 	<div class="image_optimizer-utility flex items-center justify-between">
 
 		<div class="flex items-center text-base text-grey">
-			
+
 			<slot></slot>
 
 			<div v-if="statistics.images.length">
-			
-				{{ translations['imageoptimizer::cp.optimized'] }} {{ statistics.optimized.length }} {{ translations['imageoptimizer::cp.of'] }} {{ statistics.images.length }} {{ translations['imageoptimizer::cp.images'] }}
-				<div v-if="filesize">{{ translations['imageoptimizer::cp.reduced'] }} {{ getBytes(filesize) }} ({{ percentage }}%)</div>
+
+				{{ __('imageoptimizer::cp.optimized') }} {{ statistics.optimized.length }} {{ __('imageoptimizer::cp.of') }} {{ statistics.images.length }} {{ __('imageoptimizer::cp.images') }}
+				<div v-if="filesize">{{ __('imageoptimizer::cp.reduced') }} {{ getBytes(filesize) }} ({{ percentage }}%)</div>
 
 			</div>
 
 			<div v-else>
-				
-				{{ translations['imageoptimizer::cp.empty'] }}
+
+				{{ __('imageoptimizer::cp.empty') }}
 
 			</div>
 
@@ -28,15 +28,15 @@
 				<div class="progress-bar h-full bg-blue transition-width duration-500 ease-in-out" :style="{ width: progress }"></div>
 
 			</div>
-			
-			<small class="text-s text-grey whitespace-no-wrap">{{ translations['imageoptimizer::cp.optimizing'] }} {{ index + 1 }} {{ translations['imageoptimizer::cp.of'] }} {{ statistics.images.length }} ({{ current }})</small>
-		
+
+			<small class="text-s text-grey whitespace-no-wrap">{{ __('imageoptimizer::cp.optimizing') }} {{ index + 1 }} {{ __('imageoptimizer::cp.of') }} {{ statistics.images.length }} ({{ current }})</small>
+
 		</div>
 
 		<div v-if="statistics.images.length && !optimizing">
-		
-			<button class="btn btn-primary" @click="doOptimizeAll">{{ translations['imageoptimizer::cp.optimize'] }}</button>
-			<button class="btn" @click="doOptimizeNew" v-if="statistics.images.length > statistics.optimized.length">{{ translations['imageoptimizer::cp.optimize-new'] }}</button>
+
+			<button class="btn btn-primary" @click="doOptimizeAll">{{ __('imageoptimizer::cp.optimize') }}</button>
+			<button class="btn" @click="doOptimizeNew" v-if="statistics.images.length > statistics.optimized.length">{{ __('imageoptimizer::cp.optimize-new') }}</button>
 
 		</div>
 
@@ -46,16 +46,15 @@
 
 <script>
 
-import Translations from '../mixins/translations';
 import Bytes from '../mixins/bytes';
 
 export default {
 
-	mixins: [Bytes, Fieldtype, Translations],
+	mixins: [Bytes, Fieldtype],
 	props: ['stats'],
 
     data() {
-        
+
         return {
 
             optimizing: false,
@@ -108,10 +107,10 @@ export default {
 
             })
             .catch(error => {
-				
+
 				this.optimizing = false;
 				this.index = 0;
-				            	
+
             });
 
             this.optimizing = true;
