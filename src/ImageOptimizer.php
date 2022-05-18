@@ -58,8 +58,8 @@ class ImageOptimizer
 
             $source = $asset->disk()->filesystem()->readStream($path);
             $target = $asset->basename();
-            
-            Storage::disk('local')->putStream($target, $source);
+
+            Storage::disk('local')->writeStream($target, $source);
 
             $path = Storage::disk('local')->path($target);
 
@@ -86,7 +86,7 @@ class ImageOptimizer
             $source = Storage::disk('local')->readStream($path);
             $target = $asset->resolvedPath();
 
-            $asset->disk()->filesystem()->putStream($target, $source);
+            $asset->disk()->filesystem()->writeStream($target, $source);
 
             Storage::disk('local')->delete($path);
 
@@ -126,7 +126,7 @@ class ImageOptimizer
         if (!isset($data['original_size'])) {
 
             $data['original_size'] = $asset->disk()->size( $asset->path() );
-    
+
             $asset->set('imageoptimizer', $data);
             $asset->save();
 
@@ -154,7 +154,7 @@ class ImageOptimizer
         $asset->save();
 
         return $asset;
-        
+
     }
 
     /**
@@ -164,15 +164,15 @@ class ImageOptimizer
      */
     public function optimizeGlide($path)
     {
-        
+
         $cache_key = 'imageoptimizer:' . $path;
 
         $base = config('statamic.assets.image_manipulation.cache') ? config('statamic.assets.image_manipulation.cache_path') : storage_path('statamic/glide');
         $path = realpath($base . '/' . $path);
-        
+
         if (cache()->get($cache_key, false) !== filemtime($path))
         {
-            
+
             $this->optimizePath($path);
             cache()->put($cache_key, filemtime($path));
 
@@ -367,7 +367,7 @@ class ImageOptimizer
         if (config('statamic.imageoptimizer.log'))
         {
 
-            Log::info($message, $context);   
+            Log::info($message, $context);
 
         }
 
