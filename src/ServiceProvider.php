@@ -72,9 +72,9 @@ class ServiceProvider extends AddonServiceProvider
 		$utility = Utility::make('ImageOptimizer')->title('ImageOptimizer')->navTitle('Optimizer')->description( __('imageoptimizer::cp.description') )->icon('assets');
 
         $utility->routes(function($router) {
-
-            $router->get('/', [ImageOptimizerController::class, 'index'])->name('index');
-            $router->post('/{encoded_asset}', [ImageOptimizerController::class, 'optimize'])->name('optimize');
+            
+            $router->get('/', [ImageOptimizerController::class, 'index'])->middleware('statamic.cp.authenticated')->name('index');
+            $router->post('/{encoded_asset}', [ImageOptimizerController::class, 'optimize'])->middleware('statamic.cp.authenticated')->name('optimize');
 
         });
 

@@ -75,8 +75,8 @@ class ImageOptimizerController extends CpController {
             if ($data = $asset->get('imageoptimizer'))
             {
 
-                $original->push( $data['original_size'] );
-                $current->push( $data['current_size'] );
+                $original->push( $data['original_size'] ?? 0 );
+                $current->push( $data['current_size'] ?? 0 );
                 $optimized->push( $asset->id() );
                 
             }
