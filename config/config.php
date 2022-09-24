@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Assets
@@ -42,47 +41,37 @@ return [
     |
     | Image optimizer commands
     |
-    | You can use `:file` to reference the full path to the image you are 
-    | optimizing and `:temp` to use a temporary output file if the optimizer 
-    | requires it. The contents of the `:temp` file will automatically be copied 
+    | You can use `:file` to reference the full path to the image you are
+    | optimizing and `:temp` to use a temporary output file if the optimizer
+    | requires it. The contents of the `:temp` file will automatically be copied
     | back to the original file after the optimization.
     |
     */
 
     'optimizers' => [
-
         [
-
             'executable' => 'jpegoptim',
-            'arguments'  => '--strip-all --all-progressive -m85 :file',
-            'mimetype'   => 'image/jpeg',
-
+            'arguments' => '--all-progressive -m85 :file',
+            'mimetype' => 'image/jpeg',
         ],
 
         [
-
             'executable' => 'gifsicle',
-            'arguments'  => '-b -O3 :file',
-            'mimetype'   => 'image/gif',            
-
+            'arguments' => '-b -O3 :file',
+            'mimetype' => 'image/gif',
         ],
 
         [
-
             'executable' => 'pngquant',
-            'arguments'  => '--force --output=:file :file',
-            'mimetype'   => 'image/png',
-
+            'arguments' => '--force --output=:file :file',
+            'mimetype' => 'image/png',
         ],
 
         [
-
             'executable' => 'optipng',
-            'arguments'  => '-i0 -o2 :file',
-            'mimetype'   => 'image/png',
-
-        ]
-
+            'arguments' => '-i0 -o2 :file',
+            'mimetype' => 'image/png',
+        ],
     ],
 
     /*
@@ -95,7 +84,6 @@ return [
     */
 
     'paths' => [
-
         '/opt/homebrew/bin',
         '/opt/homebrew/sbin',
         '/usr/local',
@@ -105,8 +93,6 @@ return [
         '/usr/local/bin',
         '/usr/local/sbin',
         '/bin',
-        '/sbin'
-
-    ]
-
+        '/sbin',
+    ],
 ];
