@@ -43,7 +43,8 @@ export default {
 
     created() {
 
-    	this.getAssetEditor();
+        const portal = this.$stacks.portals[this.$stacks.portals.length - 1];
+        this.asset = portal.vm.$parent.asset;
 
     },
 
@@ -51,7 +52,6 @@ export default {
 
         return {
 
-            assetEditor: false,
             asset: false,
             loading: false
 
@@ -60,27 +60,6 @@ export default {
     },
 
     methods: {
-
-        getAssetEditor() {
-
-            var parent = this.$stacks.stacks[0].$parent;
-
-            while (parent) {
-
-                if (parent.asset) {
-
-                    this.assetEditor = parent;
-                    this.asset = parent.asset;
-
-                    break;
-
-                }
-
-                parent = parent.$parent ? parent.$parent : false;
-
-            }
-
-        },
 
         doOptimize() {
 
