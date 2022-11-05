@@ -11,8 +11,7 @@ class OptimizeGlide
     public function handle(GlideImageGenerated $event)
     {
         
-        if (config('statamic.imageoptimizer.glide'))
-        {
+        if (config('statamic.imageoptimizer.glide')) {
 
             $optimizer = new ImageOptimizer();
             $optimizer->optimizeGlide($event->path);

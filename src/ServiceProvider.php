@@ -13,6 +13,8 @@ use Statamic\Providers\AddonServiceProvider;
 use Statamic\Events\AssetContainerBlueprintFound;
 use Statamic\Events\GlideImageGenerated;
 use Statamic\Events\AssetUploaded;
+use Statamic\Events\AssetReuploaded;
+use Statamic\Events\AssetReplaced;
 use Statamic\Facades\Utility;
 use Statamic\Statamic;
 
@@ -29,7 +31,9 @@ class ServiceProvider extends AddonServiceProvider
 
         AssetContainerBlueprintFound::class => [TransformAssetContainerBlueprint::class],
         GlideImageGenerated::class => [OptimizeGlide::class],
-        AssetUploaded::class => [OptimizeAsset::class]
+        AssetUploaded::class => [OptimizeAsset::class],        
+        AssetReUploaded::class => [OptimizeAsset::class],
+        AssetReplaced::class => [OptimizeAsset::class]
 
     ];
 

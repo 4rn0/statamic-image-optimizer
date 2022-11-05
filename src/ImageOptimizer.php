@@ -53,8 +53,7 @@ class ImageOptimizer
 
         $path = $asset->resolvedPath();
 
-        if (!$this->isOnLocalFileSystem($asset))
-        {
+        if (!$this->isOnLocalFileSystem($asset)) {
 
             $source = $asset->disk()->filesystem()->readStream($path);
             $target = $asset->basename();
@@ -78,8 +77,7 @@ class ImageOptimizer
     private function ensureOnCorrectFileSystem(Asset $asset)
     {
 
-        if (!$this->isOnLocalFileSystem($asset))
-        {
+        if (!$this->isOnLocalFileSystem($asset)) {
 
             $path = $asset->basename();
 
@@ -170,8 +168,7 @@ class ImageOptimizer
         $base = config('statamic.assets.image_manipulation.cache') ? config('statamic.assets.image_manipulation.cache_path') : storage_path('statamic/glide');
         $path = realpath($base . '/' . $path);
 
-        if (cache()->get($cache_key, false) !== filemtime($path))
-        {
+        if (cache()->get($cache_key, false) !== filemtime($path)) {
 
             $this->optimizePath($path);
             cache()->put($cache_key, filemtime($path));
@@ -208,30 +205,25 @@ class ImageOptimizer
         $optimizers = config('statamic.imageoptimizer.optimizers');
         $filetype = mime_content_type($path);
 
-        foreach ($optimizers as $optimizer)
-        {
+        foreach ($optimizers as $optimizer) {
 
-            if ($optimizer['mimetype'] === $filetype)
-            {
+            if ($optimizer['mimetype'] === $filetype) {
 
                 $tempfile = false;
 
                 $command = $this->getCommand($optimizer['executable'], $optimizer['arguments']);
                 $command = str_replace(':file', escapeshellarg($path), $command);
 
-                if (strpos($command, ':temp') !== false)
-                {
+                if (strpos($command, ':temp') !== false) {
 
                     $tempfile = tempnam(sys_get_temp_dir(), 'imageoptimizer');
                     $command = str_replace(':temp', escapeshellarg($tempfile), $command);
 
                 }
 
-                $this->optimize($command, function() use ($tempfile, $path)
-                {
+                $this->optimize($command, function() use ($tempfile, $path) {
 
-                    if ($tempfile && filesize($tempfile))
-                    {
+                    if ($tempfile && filesize($tempfile)) {
 
                         rename($tempfile, $path);
 
@@ -364,8 +356,7 @@ class ImageOptimizer
     private function log($message, $context = [])
     {
 
-        if (config('statamic.imageoptimizer.log'))
-        {
+        if (config('statamic.imageoptimizer.log')) {
 
             Log::info($message, $context);
 

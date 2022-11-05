@@ -39,8 +39,7 @@ class ImageOptimizerCommand extends Command
 
         $this->output->progressStart( $assets->count() );
 
-        foreach ($assets as $asset)
-        {
+        foreach ($assets as $asset) {
 
             $optimizer->optimizeAsset($asset);
             $this->output->progressAdvance();
