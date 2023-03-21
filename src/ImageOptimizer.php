@@ -58,7 +58,7 @@ class ImageOptimizer
             $source = $asset->disk()->filesystem()->readStream($path);
             $target = $asset->basename();
 
-            Storage::disk('local')->writeStream($target, $source);
+            Storage::disk('local')->putStream($target, $source);
 
             $path = Storage::disk('local')->path($target);
 
@@ -84,7 +84,7 @@ class ImageOptimizer
             $source = Storage::disk('local')->readStream($path);
             $target = $asset->resolvedPath();
 
-            $asset->disk()->filesystem()->writeStream($target, $source);
+            $asset->disk()->filesystem()->putStream($target, $source);
 
             Storage::disk('local')->delete($path);
 
