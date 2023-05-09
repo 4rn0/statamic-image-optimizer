@@ -1,6 +1,6 @@
 {
-    "name": "4rn0/statamic-v3-image-optimizer",
-    "description": "Statamic v3 Image Optimizer addon",
+    "name": "4rn0/statamic-image-optimizer",
+    "description": "Statamic Image Optimizer addon",
     "type": "statamic-addon",
     "autoload": {
         "psr-4": {
@@ -17,8 +17,8 @@
     },
     "extra": {
         "statamic": {
-            "name": "Statamic v3 Image Optimizer",
-            "description": "Statamic v3 Image Optimizer addon"
+            "name": "Statamic Image Optimizer",
+            "description": "Statamic Image Optimizer addon"
         },
         "laravel": {
             "providers": [

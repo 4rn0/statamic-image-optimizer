@@ -1,7 +1,7 @@
 ## Install
 First, install the addon using composer  
 
-```composer require 4rn0/statamic-v3-image-optimizer```
+```composer require 4rn0/statamic-image-optimizer```
 
 Then, publish the assets by running  
 
