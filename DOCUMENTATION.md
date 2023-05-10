@@ -7,6 +7,8 @@ Then, publish the assets by running
 
 ```php artisan vendor:publish --provider="Arnohoogma\StatamicImageOptimizer\ServiceProvider" --force```
 
+*Please note* that before Statamic 4 was unleashed this addon was available as `4rn0/statamic-v3-image-optimizer`. Much like Statamic is now just 'Statamic', the 'v3' part was dropped from this addon's name repository, etc. It will just be known as 'Statamic ImageOptimizer' going forward.
+
 ## Configuration
 ImageOptimizer comes with a configuration file, which you can find at `config/statamic/imageoptimizer.php` after publishing the assets.  
 

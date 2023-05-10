@@ -8,22 +8,22 @@
 
         </div>
 
-        <div class="text-sm text-grey" v-else>
+        <div v-else>
 
-	    	<div v-if="asset.values.imageoptimizer">
+	    	<div class="help-block" v-if="asset.values.imageoptimizer">
 
 	    		{{ __('imageoptimizer::cp.original') }}: {{ getBytes(asset.values.imageoptimizer.original_size) }}<br>
 	    		{{ __('imageoptimizer::cp.reduced') }}: {{ getBytes(savings) }} ({{ percentage }}%)<br>
 
-	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</a>
+	    		<a href="#" class="inline-block mt-2 text-red-500" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</a>
 
 	    	</div>
 
-	    	<div v-else>
+	    	<div class="help-block" v-else>
 
 	    		{{ __('imageoptimizer::cp.not-optimized') }}<br>
 
-	    		<a href="#" class="inline-block mt-1 text-red hover:underline" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</a>
+	    		<a href="#" class="inline-block mt-2 text-red-500" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</a>
 
 	    	</div>
 
@@ -44,7 +44,7 @@ export default {
     created() {
 
         const portal = this.$stacks.portals[this.$stacks.portals.length - 1];
-        this.asset = portal.vm.$parent.asset;
+        this.asset = portal.data.vm.$parent.asset;
 
     },
 
@@ -67,7 +67,7 @@ export default {
 
             this.$axios.post(url, {}, this.toEleven).then(response => {
 
-                this.asset = response.data.asset;
+                this.asset = response.data.asset.data;
                 this.loading = false;
 
             })

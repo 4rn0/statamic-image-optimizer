@@ -49,10 +49,8 @@ class ServiceProvider extends AddonServiceProvider
 
     ];
 
-    public function boot()
+    public function bootAddon()
     {
-
-        parent::boot();
 
 		$this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'statamic.imageoptimizer');
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'imageoptimizer');
@@ -73,16 +71,17 @@ class ServiceProvider extends AddonServiceProvider
 	private function createUtility()
 	{
 
-		$utility = Utility::make('ImageOptimizer')->title('ImageOptimizer')->navTitle('Optimizer')->description( __('imageoptimizer::cp.description') )->icon('assets');
+        Utility::extend(function() {
 
-        $utility->routes(function($router) {
-            
-            $router->get('/', [ImageOptimizerController::class, 'index'])->middleware('statamic.cp.authenticated')->name('index');
-            $router->post('/{encoded_asset}', [ImageOptimizerController::class, 'optimize'])->middleware('statamic.cp.authenticated')->name('optimize');
+            $utility = Utility::register('ImageOptimizer')->title('ImageOptimizer')->navTitle('Optimizer')->description( __('imageoptimizer::cp.description') )->icon('assets');
 
+            $utility->routes(function($router) {
+                
+                $router->get('/', [ImageOptimizerController::class, 'index'])->middleware('statamic.cp.authenticated')->name('index');
+                $router->post('/{encoded_asset}', [ImageOptimizerController::class, 'optimize'])->middleware('statamic.cp.authenticated')->name('optimize');
+
+            });
         });
-
-        $utility->register();
 
 	}
 
