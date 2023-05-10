@@ -45,7 +45,7 @@
 </div>
 
 <h3 class="mt-8 mb-1 font-bold text-lg">{{ __('imageoptimizer::cp.optimizers') }}</h3>
-<p class="text-sm text-grey mb-4">{!! __('imageoptimizer::cp.documentation', ['url' => 'https://statamic.com/addons/4rn0/imageoptimizer-v3/docs']) !!}</p>
+<p class="text-sm text-grey mb-4">{!! __('imageoptimizer::cp.documentation', ['url' => 'https://statamic.com/addons/4rn0/imageoptimizer/docs']) !!}</p>
 
 <div class="card p-0">
 
@@ -72,13 +72,13 @@
 				<td>
 
 					@if (!$optimizer['found'])
-					<span class="little-dot bg-red mr-1"></span>
+					<span class="little-dot bg-red-500 mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_no', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@elseif (str_contains($optimizer['found'], '4rn0'))
 					<span class="little-dot bg-orange mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_maybe', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@else
-					<span class="little-dot bg-green mr-1"></span>
+					<span class="little-dot bg-green-600 mr-1"></span>
 					<code class="text-grey" title="{!! __('imageoptimizer::cp.optimizer_yes', ['path' => $optimizer['found']]) !!}">{{ $optimizer['executable'] }}</code>
 					@endif
 
