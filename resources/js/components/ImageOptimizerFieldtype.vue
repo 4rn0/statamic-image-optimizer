@@ -10,12 +10,12 @@
 
         <div v-else>
 
-	    	<div class="help-block" v-if="asset.values.imageoptimizer">
+	    	<div class="help-block" v-if="assetValues.imageoptimizer">
 
-	    		{{ __('imageoptimizer::cp.original') }}: {{ getBytes(asset.values.imageoptimizer.original_size) }}<br>
-	    		{{ __('imageoptimizer::cp.reduced') }}: {{ getBytes(savings) }} ({{ percentage }}%)<br>
+	    		{{ __('imageoptimizer::cp.original') }}: <code>{{ getBytes(assetValues.imageoptimizer.original_size) }}</code><br>
+	    		{{ __('imageoptimizer::cp.reduced') }}: <code>{{ getBytes(savings) }}</code> ({{ percentage }}%)<br>
 
-	    		<a href="#" class="inline-block mt-2 text-red-500" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</a>
+	    		<button type="button" class="btn-primary mt-4" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</button>
 
 	    	</div>
 
@@ -23,7 +23,7 @@
 
 	    		{{ __('imageoptimizer::cp.not-optimized') }}<br>
 
-	    		<a href="#" class="inline-block mt-2 text-red-500" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</a>
+	    		<button type="button" class="btn-primary mt-4" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</button>
 
 	    	</div>
 
@@ -43,8 +43,8 @@ export default {
 
     created() {
 
-        const portal = this.$stacks.portals[this.$stacks.portals.length - 1];
-        this.asset = portal.data.vm.$parent.asset;
+        this.assetId = this.asset.blueprint.handle + '::' + this.asset.extraValues.path;
+        this.assetValues = this.asset.values;
 
     },
 
@@ -52,7 +52,9 @@ export default {
 
         return {
 
-            asset: false,
+            assetId: null,
+            assetValues: null,
+
             loading: false
 
         };
@@ -63,11 +65,11 @@ export default {
 
         doOptimize() {
 
-            const url = cp_url('utilities/imageoptimizer/' + btoa(this.asset.id));
+            const url = cp_url('utilities/imageoptimizer/' + btoa(this.assetId));
 
             this.$axios.post(url, {}, this.toEleven).then(response => {
 
-                this.asset = response.data.asset.data;
+                this.assetValues = response.data.asset.data.values;
                 this.loading = false;
 
             })
@@ -85,21 +87,30 @@ export default {
 
     computed: {
 
+        asset: function() {
+
+            return this.$store.state.publish.asset;
+
+        },
+
         isImage: function() {
 
-            return this.asset && this.asset.isImage && this.asset.extension !== 'svg';
+            const mimeType = this.asset.extraValues.mimeType;
+            const extension = this.asset.extension;
+
+            return this.asset && mimeType.startsWith('image/') && extension !== 'svg';
 
         },
 
         savings: function() {
 
-            return this.asset.values.imageoptimizer.original_size - this.asset.values.imageoptimizer.current_size;
+            return this.assetValues.imageoptimizer.original_size - this.assetValues.imageoptimizer.current_size;
 
         },
 
         percentage: function() {
 
-            return ((this.savings / this.asset.values.imageoptimizer.original_size) * 100).toFixed(2);
+            return ((this.savings / this.assetValues.imageoptimizer.original_size) * 100).toFixed(2);
 
         }
 
