@@ -8,6 +8,7 @@ use Statamic\Http\Controllers\CP\CpController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use Statamic\Assets\Asset;
+use Inertia\Inertia;
 
 class ImageOptimizerController extends CpController {
 
@@ -23,10 +24,16 @@ class ImageOptimizerController extends CpController {
 
         }
 
-        return view('imageoptimizer::utility', [
+        return Inertia::render('imageoptimizer::Utility', [
 
             'stats' => $this->getStatistics(),
-            'optimizers' => $optimizers
+            'optimizers' => $optimizers,
+            'configPath' => config_path('statamic/imageoptimizer.php'),
+            'config' => [
+                'assets' => config('statamic.imageoptimizer.assets'),
+                'glide' => config('statamic.imageoptimizer.glide'),
+                'log' => config('statamic.imageoptimizer.log'),
+            ],
 
         ]);
 

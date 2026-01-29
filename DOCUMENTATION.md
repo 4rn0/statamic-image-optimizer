@@ -7,7 +7,7 @@ Then, publish the assets by running
 
 ```php artisan vendor:publish --provider="Arnohoogma\StatamicImageOptimizer\ServiceProvider" --force```
 
-*Please note* that before Statamic 4 was unleashed this addon was available as `4rn0/statamic-v3-image-optimizer`. Much like Statamic is now just 'Statamic', the 'v3' part was dropped from this addon's name repository, etc. It will just be known as 'Statamic ImageOptimizer' going forward.
+*Please note* that this addon was previously available as `4rn0/statamic-v3-image-optimizer`. It is now just known as 'Statamic ImageOptimizer'.
 
 ## Configuration
 ImageOptimizer comes with a configuration file, which you can find at `config/statamic/imageoptimizer.php` after publishing the assets.  
@@ -19,7 +19,7 @@ This addon dynamically adds a *Fieldtype* to the Asset editor, with which you ca
 
 It also adds a *Utility* screen, where you can view all optimization gains as well as the addon's current settings and configured optimizers. It provides an option to run the optimization process on all Assets again.  
 
-Finally, it adds a `please optimize:images` *Command* which optimizes all your existing image Assets and clears the Glide cache.  
+Finally, it adds a `php please optimize:images` *Command* which optimizes all your existing image Assets and clears the Glide cache.  
 
 ## Optimization tools
 The addon will use the following optimizers if they are available on your system:

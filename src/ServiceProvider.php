@@ -22,9 +22,7 @@ class ServiceProvider extends AddonServiceProvider
 {
 
     protected $scripts = [
-
-        __DIR__ . '/../public/js/app.js'
-
+        __DIR__ . '/../resources/dist/js/addon.js',
     ];
 
     protected $listen = [

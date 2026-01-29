@@ -50,7 +50,7 @@ class ImageOptimizerCommand extends Command
 
         $this->info('Your image Assets have been optimized.');
 
-    	$this->call('glide:clear');
+    	$this->call('statamic:glide:clear');
         $this->call('cache:clear');
 
     }

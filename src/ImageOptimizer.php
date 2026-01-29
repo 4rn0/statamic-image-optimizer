@@ -25,8 +25,8 @@ class ImageOptimizer
     /**
      * Optimize Asset, save metadata
      *
-     * @param Statamic\Assets\Asset $asset
-     * @return Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
+     * @return \Statamic\Assets\Asset $asset
      */
     public function optimizeAsset(Asset $asset)
     {
@@ -45,7 +45,7 @@ class ImageOptimizer
     /**
      * Copy Asset to local filesystem if necessary
      *
-     * @param Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
      * @return string $path
      */
     private function ensureOnLocalFileSystem(Asset $asset)
@@ -71,8 +71,8 @@ class ImageOptimizer
     /**
      * Move optimized Asset from local to remote filesystem
      *
-     * @param Statamic\Assets\Asset $asset
-     * @return Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
+     * @return \Statamic\Assets\Asset $asset
      */
     private function ensureOnCorrectFileSystem(Asset $asset)
     {
@@ -97,7 +97,7 @@ class ImageOptimizer
     /**
      * Check if Asset is on local filesystem
      *
-     * @param Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
      * @return bool
      */
     private function isOnLocalFileSystem(Asset $asset)
@@ -113,8 +113,8 @@ class ImageOptimizer
     /**
      * Sets Asset's original size
      *
-     * @param Statamic\Assets\Asset $asset
-     * @return Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
+     * @return \Statamic\Assets\Asset $asset
      */
     private function setOriginalSize(Asset $asset)
     {
@@ -137,8 +137,8 @@ class ImageOptimizer
     /**
      * Sets Asset's current size
      *
-     * @param Statamic\Assets\Asset $asset
-     * @return Statamic\Assets\Asset $asset
+     * @param \Statamic\Assets\Asset $asset
+     * @return \Statamic\Assets\Asset $asset
      */
     private function setCurrentSize(Asset $asset)
     {

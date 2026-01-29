@@ -2,6 +2,10 @@
     "name": "4rn0/statamic-image-optimizer",
     "description": "Statamic Image Optimizer addon",
     "type": "statamic-addon",
+    "require": {
+        "php": "^8.3",
+        "statamic/cms": "^6.0"
+    },
     "autoload": {
         "psr-4": {
             "Arnohoogma\\StatamicImageOptimizer\\": "src"

@@ -1,33 +1,41 @@
 <template>
 
-    <div v-if="isImage">
+    <div v-if="isImage" class="text-sm leading-tight">
 
-        <div v-if="loading">
-
-            <loading-graphic class="mt-1" />
-
+        <div v-if="loading" class="flex items-center gap-2 text-gray-600 dark:text-dark-150">
+            <ui-icon name="loading" class="size-4" />
+            <span>{{ __('imageoptimizer::cp.optimizing') }}...</span>
         </div>
 
         <div v-else>
 
-	    	<div class="help-block" v-if="assetValues.imageoptimizer">
+            <div v-if="assetValues && assetValues.imageoptimizer" class="space-y-1">
+                <div class="text-gray-700 dark:text-dark-150">
+                    <span class="text-gray-500 dark:text-dark-200">{{ __('imageoptimizer::cp.original') }}:</span>
+                    <span class="font-medium">{{ getBytes(assetValues.imageoptimizer.original_size) }}</span>
+                </div>
+                <div class="text-gray-700 dark:text-dark-150">
+                    <span class="text-gray-500 dark:text-dark-200">{{ __('imageoptimizer::cp.reduced') }}:</span>
+                    <span class="font-medium text-green-600 dark:text-green-400">{{ getBytes(savings) }} ({{ percentage }}%)</span>
+                </div>
+                <ui-button
+                    size="sm"
+                    class="mt-1.5"
+                    @click="doOptimize"
+                    :text="__('imageoptimizer::cp.optimize-again')"
+                />
+            </div>
 
-	    		{{ __('imageoptimizer::cp.original') }}: <code>{{ getBytes(assetValues.imageoptimizer.original_size) }}</code><br>
-	    		{{ __('imageoptimizer::cp.reduced') }}: <code>{{ getBytes(savings) }}</code> ({{ percentage }}%)<br>
+            <div v-else class="space-y-1">
+                <p class="text-gray-600 dark:text-dark-150">{{ __('imageoptimizer::cp.not-optimized') }}</p>
+                <ui-button
+                    size="sm"
+                    @click="doOptimize"
+                    :text="__('imageoptimizer::cp.optimize')"
+                />
+            </div>
 
-	    		<button type="button" class="btn-primary mt-4" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize-again') }}</button>
-
-	    	</div>
-
-	    	<div class="help-block" v-else>
-
-	    		{{ __('imageoptimizer::cp.not-optimized') }}<br>
-
-	    		<button type="button" class="btn-primary mt-4" @click.prevent="doOptimize">{{ __('imageoptimizer::cp.optimize') }}</button>
-
-	    	</div>
-
-	    </div>
+        </div>
 
     </div>
 
@@ -35,17 +43,23 @@
 
 <script>
 
-import Bytes from '../mixins/bytes';
+import { useBytes } from '../composables/useBytes.js';
+import { FieldtypeMixin as Fieldtype } from '@statamic/cms';
 
 export default {
 
-	mixins: [Bytes, Fieldtype],
+	mixins: [Fieldtype],
 
-    created() {
+    setup() {
+        const { getBytes } = useBytes();
+        return { getBytes };
+    },
 
-        this.assetId = this.asset.blueprint.handle + '::' + this.asset.extraValues.path;
-        this.assetValues = this.asset.values;
-
+    mounted() {
+        if (this.publishContainer) {
+            this.assetId = this.publishContainer.blueprint.handle + '::' + this.publishContainer.extraValues.path;
+            this.assetValues = this.publishContainer.values;
+        }
     },
 
     data() {
@@ -87,31 +101,23 @@ export default {
 
     computed: {
 
-        asset: function() {
-
-            return this.$store.state.publish.asset;
-
-        },
-
         isImage: function() {
+            if (!this.publishContainer) return false;
 
-            const mimeType = this.asset.extraValues.mimeType;
-            const extension = this.asset.extension;
+            const mimeType = this.publishContainer.extraValues?.mimeType;
+            const extension = this.publishContainer.extraValues?.extension;
 
-            return this.asset && mimeType.startsWith('image/') && extension !== 'svg';
-
+            return mimeType && mimeType.startsWith('image/') && extension !== 'svg';
         },
 
         savings: function() {
-
+            if (!this.assetValues?.imageoptimizer) return 0;
             return this.assetValues.imageoptimizer.original_size - this.assetValues.imageoptimizer.current_size;
-
         },
 
         percentage: function() {
-
+            if (!this.assetValues?.imageoptimizer) return 0;
             return ((this.savings / this.assetValues.imageoptimizer.original_size) * 100).toFixed(2);
-
         }
 
     }
