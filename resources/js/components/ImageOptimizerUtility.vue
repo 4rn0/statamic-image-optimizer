@@ -3,15 +3,15 @@
     <div class="flex flex-col gap-4">
 
         <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-700 dark:text-dark-150">
+            <div class="text-sm text-gray-700 dark:text-gray-200">
                 <template v-if="statistics.images.length">
                     <span class="font-medium">{{ statistics.optimized.length }}</span> {{ __('imageoptimizer::cp.of') }} <span class="font-medium">{{ statistics.images.length }}</span> {{ __('imageoptimizer::cp.images') }} {{ __('imageoptimizer::cp.optimized') }}
-                    <span v-if="filesize" class="text-green-600 dark:text-green-400 font-medium">
+                    <span v-if="filesize" class="text-green-600 dark:text-emerald-300 font-medium">
                         — {{ __('imageoptimizer::cp.reduced') }} {{ getBytes(filesize) }} ({{ percentage }}%)
                     </span>
                 </template>
                 <template v-else>
-                    <span class="text-gray-500 dark:text-dark-200">{{ __('imageoptimizer::cp.empty') }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.empty') }}</span>
                 </template>
             </div>
 
@@ -32,16 +32,16 @@
         </div>
 
         <div v-if="optimizing" class="space-y-2">
-            <div class="h-2 bg-gray-200 dark:bg-dark-600 rounded-full overflow-hidden">
+            <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                    class="h-full bg-primary transition-all duration-300 ease-out rounded-full"
+                    class="h-full bg-blue-500 transition-all duration-300 ease-out rounded-full"
                     :style="{ width: progress }"
                 ></div>
             </div>
-            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-200">
+            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <ui-icon name="loading" class="size-4" />
-                <span>{{ __('imageoptimizer::cp.optimizing') }} {{ index + 1 }} {{ __('imageoptimizer::cp.of') }} {{ list.length }}</span>
-                <span class="text-gray-400 dark:text-dark-300 truncate">({{ current }})</span>
+                <span>{{ __('imageoptimizer::cp.optimizing') }} {{ Math.min(index + 1, list.length) }} {{ __('imageoptimizer::cp.of') }} {{ list.length }}</span>
+                <span v-if="current" class="text-gray-400 dark:text-gray-400 truncate">({{ current }})</span>
             </div>
         </div>
 
@@ -52,12 +52,10 @@
 <script>
 
 import { useBytes } from '../composables/useBytes.js';
-import { FieldtypeMixin as Fieldtype } from '@statamic/cms';
 
 export default {
 
-    mixins: [Fieldtype],
-    props: ['stats'],
+    props: ['stats', 'queued'],
 
     setup() {
         const { getBytes } = useBytes();
@@ -72,6 +70,7 @@ export default {
             store: false,
             list: [],
             index: 0,
+            run: null,
 
         };
 
@@ -81,6 +80,8 @@ export default {
 
         doOptimizeNew() {
 
+            if (this.queued) return this.doRun('new');
+
             this.list = this.statistics.images.filter(item => this.statistics.optimized.indexOf(item) < 0);
             this.doOptimize();
 
@@ -88,19 +89,72 @@ export default {
 
         doOptimizeAll() {
 
+            if (this.queued) return this.doRun('all');
+
             this.list = this.statistics.images;
             this.doOptimize();
 
         },
 
+        // With a queue: one request starts the run, then poll its progress
+        doRun(only) {
+
+            this.optimizing = true;
+
+            this.$axios.post(cp_url('utilities/imageoptimizer/run'), { only }).then(response => {
+
+                this.run = response.data;
+                this.list = new Array(response.data.total);
+                this.index = 0;
+                this.poll();
+
+            })
+            .catch(error => this.fail(error));
+
+        },
+
+        poll() {
+
+            this.$axios.get(cp_url('utilities/imageoptimizer/run/' + this.run.run)).then(response => {
+
+                this.index = response.data.done;
+
+                if (response.data.done < response.data.total) {
+
+                    setTimeout(this.poll, 1500);
+
+                }
+
+                else {
+
+                    this.optimizing = false;
+                    this.index = 0;
+                    this.store = response.data.stats;
+
+                }
+
+            })
+            .catch(error => this.fail(error));
+
+        },
+
+        fail(error) {
+
+            this.optimizing = false;
+            this.index = 0;
+            Statamic.$toast.error(error.response?.data?.message || __('imageoptimizer::cp.error'));
+
+        },
+
+        // Without a queue: optimize one image per request
         doOptimize() {
 
-            let url  = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + '?statistics=1');
-                url += (this.index == this.list.length - 1) ? '&clearcache=1' : '';
+            const last = this.index == this.list.length - 1;
+            const url = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + (last ? '?statistics=1&clearcache=1' : ''));
 
-            this.$axios.post(url, {}, this.toEleven).then(response => {
+            this.$axios.post(url).then(response => {
 
-                if (this.index < this.list.length - 1) {
+                if (!last) {
 
                     this.$nextTick(this.doOptimize);
                     this.index++;
@@ -111,18 +165,12 @@ export default {
 
                     this.optimizing = false;
                     this.index = 0;
+                    this.store = response.data.stats;
 
                 }
 
-                this.store = response.data.stats;
-
             })
-            .catch(error => {
-
-                this.optimizing = false;
-                this.index = 0;
-
-            });
+            .catch(error => this.fail(error));
 
             this.optimizing = true;
 
@@ -146,13 +194,15 @@ export default {
 
         percentage() {
 
+            if (!this.statistics.original_size) return 0;
             return ((this.filesize / this.statistics.original_size) * 100).toFixed(2);
 
         },
 
         progress() {
 
-            return ((this.index / (this.list.length - 1)) * 100) + '%';
+            // the item in progress counts, so the bar reaches 100% while the last one runs
+            return ((Math.min(this.index + 1, this.list.length) / this.list.length) * 100) + '%';
 
         },
 

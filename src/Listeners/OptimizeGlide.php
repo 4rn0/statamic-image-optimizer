@@ -3,9 +3,10 @@
 namespace Arnohoogma\StatamicImageOptimizer\Listeners;
 
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Statamic\Events\GlideImageGenerated;
 
-class OptimizeGlide
+class OptimizeGlide implements ShouldQueue
 {
 
     public function handle(GlideImageGenerated $event)

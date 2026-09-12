@@ -5,7 +5,8 @@ namespace Arnohoogma\StatamicImageOptimizer\Commands;
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
 use Statamic\Console\RunsInPlease;
 use Illuminate\Console\Command;
-use Statamic\Assets\Asset;
+use Statamic\Facades\Asset;
+use Statamic\Facades\AssetContainer;
 
 class ImageOptimizerCommand extends Command
 {
@@ -17,7 +18,11 @@ class ImageOptimizerCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'statamic:optimize:images';
+    protected $signature = 'statamic:optimize:images
+        {--container=* : Only optimize the images in these asset containers}
+        {--only-new : Skip images that have been optimized before}
+        {--dry-run : List the images that would be optimized without touching them}
+        {--no-clear : Leave the Glide cache alone afterwards}';
 
     /**
      * The console command description.
@@ -34,7 +39,17 @@ class ImageOptimizerCommand extends Command
     public function handle()
     {
 
-        $assets = Asset::all()->filter->isImage();
+        $assets = $this->assets();
+
+        if ($this->option('dry-run')) {
+
+            $assets->each(fn ($asset) => $this->line($asset->id()));
+            $this->info($assets->count() . ' image Assets would be optimized.');
+
+            return;
+
+        }
+
         $optimizer = new ImageOptimizer();
 
         $this->output->progressStart( $assets->count() );
@@ -50,8 +65,37 @@ class ImageOptimizerCommand extends Command
 
         $this->info('Your image Assets have been optimized.');
 
-    	$this->call('statamic:glide:clear');
-        $this->call('cache:clear');
+        if (!$this->option('no-clear')) {
+
+    	    $this->call('statamic:glide:clear');
+
+        }
+
+    }
+
+    /**
+     * The image Assets to optimize, narrowed down by the command options
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    private function assets()
+    {
+
+        $containers = $this->option('container');
+
+        $assets = $containers
+            ? collect($containers)->flatMap(fn ($handle) => AssetContainer::findOrFail($handle)->assets())
+            : Asset::all();
+
+        $assets = $assets->filter->isImage();
+
+        if ($this->option('only-new')) {
+
+            $assets = $assets->reject(fn ($asset) => $asset->get('imageoptimizer'));
+
+        }
+
+        return $assets->values();
 
     }
 

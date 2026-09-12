@@ -14,9 +14,10 @@ return [
     'executable' => 'Çalıştırılabilir',
     'arguments' => 'Argümanlar',
     'mimetype' => 'Mime Türü',
-    'optimizer_no' => 'Bulunamadı. Bu optimizasyon yürütülmeyecek',
-    'optimizer_maybe' => 'Bulunamadı. Buradaki :path dahil edilen sürüm kullanılacaktır.',
-    'optimizer_yes' => 'Şu yolda bulundu: :path',
+    'optimizer_missing' => "Bulunamadı. Bu optimizasyon çalıştırılmayacak",
+    'optimizer_bundled' => "Bulunamadı. Dahili sürüm kullanılacak: :path",
+    'optimizer_found' => "Şu yolda bulundu: :path",
+    'optimizer_broken' => ":path içinde bulundu ancak bu sunucuda çalıştırılamıyor. Bu optimizasyon çalıştırılmayacak",
 
     'original' => 'İlk boyut şöyleydi:',
     'reduced' => 'Sıkıştırma aracı',
@@ -29,6 +30,9 @@ return [
 
     'optimize' => 'Optimize et',
     'optimize-new' => 'Yeni Optimizasyon',
+    'error' => "Optimizasyon başarısız oldu",
+    'action' => "Görseli optimize et",
+    'queued' => "Optimizasyon için sıraya alındı",
     'optimize-again' => 'Tekrar optimize et',
 
 ];

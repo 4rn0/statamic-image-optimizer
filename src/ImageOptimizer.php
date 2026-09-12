@@ -2,11 +2,16 @@
 
 namespace Arnohoogma\StatamicImageOptimizer;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Statamic\Contracts\Assets\Asset;
+use Statamic\Facades\Glide;
+use Symfony\Component\Process\Exception\ProcessSignaledException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Exception\RuntimeException as ProcessRuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Statamic\Assets\Asset;
 
 class ImageOptimizer
 {
@@ -25,128 +30,18 @@ class ImageOptimizer
     /**
      * Optimize Asset, save metadata
      *
-     * @param \Statamic\Assets\Asset $asset
-     * @return \Statamic\Assets\Asset $asset
+     * @param \Statamic\Contracts\Assets\Asset $asset
+     * @return \Statamic\Contracts\Assets\Asset $asset
      */
     public function optimizeAsset(Asset $asset)
     {
 
-        $path = $this->ensureOnLocalFileSystem($asset);
-
-        $this->setOriginalSize($asset);
-        $this->optimizePath($path);
-        $this->ensureOnCorrectFileSystem($asset);
-        $this->setCurrentSize($asset);
-
-        return $asset;
-
-    }
-
-    /**
-     * Copy Asset to local filesystem if necessary
-     *
-     * @param \Statamic\Assets\Asset $asset
-     * @return string $path
-     */
-    private function ensureOnLocalFileSystem(Asset $asset)
-    {
-
-        $path = $asset->resolvedPath();
-
-        if (!$this->isOnLocalFileSystem($asset)) {
-
-            $source = $asset->disk()->filesystem()->readStream($path);
-            $target = $asset->basename();
-
-            Storage::disk('local')->writeStream($target, $source);
-
-            $path = Storage::disk('local')->path($target);
-
-        }
-
-        return $path;
-
-    }
-
-    /**
-     * Move optimized Asset from local to remote filesystem
-     *
-     * @param \Statamic\Assets\Asset $asset
-     * @return \Statamic\Assets\Asset $asset
-     */
-    private function ensureOnCorrectFileSystem(Asset $asset)
-    {
-
-        if (!$this->isOnLocalFileSystem($asset)) {
-
-            $path = $asset->basename();
-
-            $source = Storage::disk('local')->readStream($path);
-            $target = $asset->resolvedPath();
-
-            $asset->disk()->filesystem()->writeStream($target, $source);
-
-            Storage::disk('local')->delete($path);
-
-        }
-
-        return $asset;
-
-    }
-
-    /**
-     * Check if Asset is on local filesystem
-     *
-     * @param \Statamic\Assets\Asset $asset
-     * @return bool
-     */
-    private function isOnLocalFileSystem(Asset $asset)
-    {
-
-        $disk = $asset->container()->toArray()['disk'];
-        $driver = config('filesystems.disks.' . $disk . '.driver');
-
-        return in_array($driver, ['local']);
-
-    }
-
-    /**
-     * Sets Asset's original size
-     *
-     * @param \Statamic\Assets\Asset $asset
-     * @return \Statamic\Assets\Asset $asset
-     */
-    private function setOriginalSize(Asset $asset)
-    {
-
         $data = $asset->get('imageoptimizer', []);
 
-        if (!isset($data['original_size'])) {
+        $sizes = $this->optimizeFile($asset->disk()->filesystem(), $asset->path());
 
-            $data['original_size'] = $asset->disk()->size( $asset->path() );
-
-            $asset->set('imageoptimizer', $data);
-            $asset->save();
-
-        }
-
-        return $asset;
-
-    }
-
-    /**
-     * Sets Asset's current size
-     *
-     * @param \Statamic\Assets\Asset $asset
-     * @return \Statamic\Assets\Asset $asset
-     */
-    private function setCurrentSize(Asset $asset)
-    {
-
-        $data = $asset->get('imageoptimizer', []);
-
-        $size = ['current_size' => $asset->disk()->size( $asset->path() )];
-        $data = array_merge($data, $size);
+        $data['original_size'] ??= $sizes['before'];
+        $data['current_size'] = $sizes['after'];
 
         $asset->set('imageoptimizer', $data);
         $asset->save();
@@ -163,22 +58,75 @@ class ImageOptimizer
     public function optimizeGlide($path)
     {
 
-        $cache_key = 'imageoptimizer:' . $path;
+        $store = Glide::cacheStore();
+        $key = 'imageoptimizer::' . $path;
 
-        $base = config('statamic.assets.image_manipulation.cache') ? config('statamic.assets.image_manipulation.cache_path') : storage_path('statamic/glide');
-        $path = realpath($base . '/' . $path);
+        if ($store->has($key)) {
 
-        if (cache()->get($cache_key, false) !== filemtime($path)) {
+            return;
 
-            $this->optimizePath($path);
-            cache()->put($cache_key, filemtime($path));
+        }
+
+        $this->optimizeFile(Glide::cacheDisk(), $path);
+
+        $store->forever($key, true);
+
+        // Asset manipulations live in containers/{container}/{asset path}/{hash}/{file}.
+        // Register the marker in Statamic's per-asset manifest so Glide::clearAsset() forgets it too.
+        if (str_starts_with($path, 'containers/')) {
+
+            $manifest = 'asset::' . preg_replace('#^containers/([^/]+)/#', '$1::', dirname($path, 2));
+
+            $store->forever($manifest, collect($store->get($manifest, []))->push($key)->unique()->all());
 
         }
 
     }
 
     /**
-     * Optimize Asset image by path, save statistics
+     * Copy a file from any filesystem to a local temp file, optimize it and write it back
+     *
+     * @param \Illuminate\Contracts\Filesystem\Filesystem $filesystem
+     * @param string $path
+     * @return array ['before' => int, 'after' => int]
+     */
+    private function optimizeFile(Filesystem $filesystem, $path)
+    {
+
+        $temp = tempnam(sys_get_temp_dir(), 'imageoptimizer');
+
+        try {
+
+            $stream = $filesystem->readStream($path);
+            file_put_contents($temp, $stream);
+            fclose($stream);
+
+            $before = filesize($temp);
+
+            $this->optimizePath($temp);
+
+            $after = filesize($temp);
+
+            if ($after && $after < $before) {
+
+                $stream = fopen($temp, 'r');
+                $filesystem->writeStream($path, $stream);
+                fclose($stream);
+
+            }
+
+            return ['before' => $before, 'after' => min($before, $after ?: $before)];
+
+        } finally {
+
+            @unlink($temp);
+
+        }
+
+    }
+
+    /**
+     * Optimize image by local path
      *
      * @param string $path
      */
@@ -188,7 +136,7 @@ class ImageOptimizer
         if (file_exists($path)) {
 
             $this->attemptOptimization($path);
-            clearstatcache($path);
+            clearstatcache(true, $path);
 
         }
 
@@ -211,8 +159,15 @@ class ImageOptimizer
 
                 $tempfile = false;
 
-                $command = $this->getCommand($optimizer['executable'], $optimizer['arguments']);
-                $command = str_replace(':file', escapeshellarg($path), $command);
+                if (!$binary = $this->findBinary($optimizer['executable'])) {
+
+                    $this->log('ImageOptimizer: no executable found for ' . $optimizer['executable']);
+
+                    continue;
+
+                }
+
+                $command = str_replace(':file', escapeshellarg($path), $binary . ' ' . $optimizer['arguments']);
 
                 if (strpos($command, ':temp') !== false) {
 
@@ -231,6 +186,12 @@ class ImageOptimizer
 
                 });
 
+                if ($tempfile) {
+
+                    @unlink($tempfile);
+
+                }
+
             }
 
         }
@@ -238,37 +199,20 @@ class ImageOptimizer
     }
 
     /**
-     * Create optimizer command
-     *
-     * @param string $executable
-     * @param string $arguments
-     * @return string $command
-     */
-    private function getCommand($executable, $arguments)
-    {
-
-        $binary = $this->findBinary($executable);
-        $command = $binary . ' ' . $arguments;
-
-        return $command;
-
-    }
-
-    /**
-     * Find executable binary for optimizer
+     * Find executable binary for optimizer: on the system first, bundled as a fallback
      *
      * @param string $name
-     * @return string $binary
+     * @return string|null $binary
      */
     public function findBinary($name)
     {
 
         $finder = new ExecutableFinder();
 
-        $included = $this->findBundledBinary($name);
+        $bundled = $this->findBundledBinary($name);
         $binary = basename($name);
 
-        return $finder->find($binary, $included, config('statamic.imageoptimizer.paths', [
+        return $finder->find($binary, $this->executable($bundled), config('statamic.imageoptimizer.paths', [
 
             '/opt/homebrew/bin',
             '/opt/homebrew/sbin',
@@ -289,30 +233,104 @@ class ImageOptimizer
      * Find bundled binary for optimizer
      *
      * @param string $name
-     * @return string $binary
+     * @return string|false $binary
      */
-    private function findBundledBinary($name)
+    public function findBundledBinary($name)
     {
 
-        if (in_array(PHP_OS, ['Linux'])) {
+        $directory = match (PHP_OS_FAMILY) {
+            'Linux' => php_uname('m') === 'x86_64' ? 'linux-x86_64' : null,
+            'Darwin' => 'darwin',
+            'Windows' => 'windows',
+            default => null,
+        };
 
-            return realpath(__DIR__  . '/../bin/linux-' . (PHP_INT_SIZE === 8 ? 'x86_64' : 'i686') . '/' . $name);
+        if (!$directory) {
 
-        }
-
-        if (in_array(PHP_OS, ['Darwin'])) {
-
-            return realpath(__DIR__  . '/../bin/darwin-' . (PHP_INT_SIZE === 8 ? 'x86_64' : 'i386') . '/' . $name);
-
-        }
-
-        if (in_array(PHP_OS, ['WIN32', 'WINNT', 'Windows'])) {
-
-            return realpath(__DIR__  . '/../bin/windows/' . $name . '.exe');
+            return false;
 
         }
 
-        return $name;
+        return realpath(__DIR__ . '/../bin/' . $directory . '/' . $name . (PHP_OS_FAMILY === 'Windows' ? '.exe' : ''));
+
+    }
+
+    /**
+     * Whether this server can actually run a binary: unsigned or foreign-architecture
+     * builds pass is_executable() but get killed. Probed once per build and remembered,
+     * so macOS Gatekeeper dialogs and killed processes don't repeat on every request.
+     *
+     * @param string $binary
+     * @return bool
+     */
+    public function canRun($binary)
+    {
+
+        $key = 'imageoptimizer::binary::' . md5($binary . @filemtime($binary) . @filesize($binary));
+
+        return Cache::rememberForever($key, fn () => $this->probe($binary));
+
+    }
+
+    /**
+     * Launch a binary with --version and see whether it survives
+     *
+     * @param string $binary
+     * @return bool
+     */
+    private function probe($binary)
+    {
+
+        $process = new Process([$binary, '--version']);
+        $process->setTimeout(5);
+
+        try {
+
+            $process->run();
+
+        } catch (ProcessSignaledException|ProcessTimedOutException|ProcessRuntimeException $e) {
+
+            Log::warning('ImageOptimizer: ' . $binary . ' cannot run: ' . $e->getMessage());
+
+            return false;
+
+        }
+
+        // 126 = not executable, 127 = not found. Any other exit code means it ran.
+        if (in_array($process->getExitCode(), [126, 127])) {
+
+            Log::warning('ImageOptimizer: ' . $binary . ' cannot run: ' . $process->getErrorOutput());
+
+            return false;
+
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Only fall back to a bundled binary that can actually run. Composer dist installs lose the executable bit.
+     *
+     * @param string|false $binary
+     * @return string|null
+     */
+    private function executable($binary)
+    {
+
+        if (!$binary || !is_file($binary)) {
+
+            return null;
+
+        }
+
+        if (!is_executable($binary)) {
+
+            @chmod($binary, 0755);
+
+        }
+
+        return is_executable($binary) && $this->canRun($binary) ? $binary : null;
 
     }
 
@@ -330,7 +348,18 @@ class ImageOptimizer
 
         $process->setTimeout(60);
         $process->enableOutput();
-        $process->run();
+
+        try {
+
+            $process->run();
+
+        } catch (ProcessSignaledException|ProcessTimedOutException $e) {
+
+            Log::warning('ImageOptimizer: ' . $e->getMessage());
+
+            return false;
+
+        }
 
         if ($process->isSuccessful() && is_callable($callback)) {
 

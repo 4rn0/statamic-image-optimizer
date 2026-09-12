@@ -2,14 +2,43 @@
     "name": "4rn0/statamic-image-optimizer",
     "description": "Statamic Image Optimizer addon",
     "type": "statamic-addon",
+    "license": "proprietary",
+    "keywords": [
+        "statamic",
+        "statamic-addon",
+        "image",
+        "optimize",
+        "optimizer",
+        "jpegoptim",
+        "pngquant",
+        "optipng",
+        "gifsicle"
+    ],
     "require": {
         "php": "^8.3",
-        "statamic/cms": "^6.0"
+        "ext-fileinfo": "*",
+        "statamic/cms": "^6.0",
+        "symfony/process": "^7.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.8",
+        "phpunit/phpunit": "^11.5"
     },
     "autoload": {
         "psr-4": {
             "Arnohoogma\\StatamicImageOptimizer\\": "src"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "config": {
+        "sort-packages": true
     },
     "authors": [
         {

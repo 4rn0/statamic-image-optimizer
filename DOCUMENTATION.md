@@ -1,84 +1,124 @@
 ## Install
-First, install the addon using composer  
+Install the addon using composer:
 
 ```composer require 4rn0/statamic-image-optimizer```
 
-Then, publish the assets by running  
+Then publish the config file, translations and control panel assets:
 
 ```php artisan vendor:publish --provider="Arnohoogma\StatamicImageOptimizer\ServiceProvider" --force```
 
-*Please note* that this addon was previously available as `4rn0/statamic-v3-image-optimizer`. It is now just known as 'Statamic ImageOptimizer'.
+Run that command again after every update of the addon. It overwrites your published `config/statamic/imageoptimizer.php`, so if you customized it, publish only the assets instead and merge new defaults by hand:
+
+```php artisan vendor:publish --tag=statamic-image-optimizer --force```
 
 ## Configuration
-ImageOptimizer comes with a configuration file, which you can find at `config/statamic/imageoptimizer.php` after publishing the assets.  
+The configuration file is published to `config/statamic/imageoptimizer.php`.
 
-In this file you can configure whether the addon should automatically optimize *image Assets*, whether it should optimize *Glide image manipulations*, whether it should *log detailed information* about those optimizations and which optimizer commands it should run on which types of images.  
+| Key | Default | What it does |
+| --- | --- | --- |
+| `assets` | `true` | Optimize every image Asset when it is uploaded or reuploaded |
+| `glide` | `true` | Optimize every Glide manipulation when it is generated |
+| `log` | `false` | Write every optimizer command and its output to the Laravel log |
+| `optimizers` | jpegoptim, gifsicle, pngquant, optipng | The commands to run per mimetype, see *Customization* |
+| `paths` | Homebrew and the usual `/usr` locations | Extra directories to search for optimizer binaries, besides `PATH` |
 
 ## Usage
-This addon dynamically adds a *Fieldtype* to the Asset editor, with which you can the image optimization gains and run optimizations on it.  
+**Asset editor.** Every image Asset gets a small *ImageOptimizer* panel in its editor showing the original size and the gain, with a button to optimize it (again). The button uses the same permission as the utility below.
 
-It also adds a *Utility* screen, where you can view all optimization gains as well as the addon's current settings and configured optimizers. It provides an option to run the optimization process on all Assets again.  
+**Asset browser.** Select one or more images and run the *Optimize image* action.
 
-Finally, it adds a `php please optimize:images` *Command* which optimizes all your existing image Assets and clears the Glide cache.  
+**Utility.** *Utilities → Optimizer* shows how many images have been optimized and how much was saved, lets you optimize all images or only the new ones, and shows the status of every configured optimizer. Users need the *Access ImageOptimizer utility* permission.
+
+**Command.** `php please optimize:images` optimizes every existing image Asset and clears the Glide cache. Options:
+
+| Option | Effect |
+| --- | --- |
+| `--container=assets` | Only this container, repeat the option for more |
+| `--only-new` | Skip images that were optimized before |
+| `--dry-run` | List what would be optimized, change nothing |
+| `--no-clear` | Keep the Glide cache |
+
+**Queue.** When the site has a queue (`QUEUE_CONNECTION` other than `sync`) uploads, Glide images, the asset browser action and the utility's bulk runs are optimized by the queue worker. The utility shows the progress of a bulk run and its statistics when it is done. With the `sync` driver everything runs during the request, as before. The button in the asset editor always optimizes immediately, so you see the result.
+
+**Statistics.** The sizes are stored on the Asset as `imageoptimizer` with `original_size` and `current_size`, so they are available in your templates as `{{ imageoptimizer:original_size }}` and `{{ imageoptimizer:current_size }}`.
 
 ## Optimization tools
-The addon will use the following optimizers if they are available on your system:
+The addon uses these optimizers when they are available on the server:
 
-- [JpegOptim](http://freecode.com/projects/jpegoptim)
-- [Optipng](http://optipng.sourceforge.net/)
-- [Pngquant 2](https://pngquant.org/)
-- [Gifsicle](http://www.lcdf.org/gifsicle/)
+- [JpegOptim](https://github.com/tjko/jpegoptim) for JPEG
+- [Pngquant](https://pngquant.org/) and [Optipng](http://optipng.sourceforge.net/) for PNG
+- [Gifsicle](http://www.lcdf.org/gifsicle/) for GIF
 
-Here's how to install all the optimizers on Ubuntu:
-
-```bash
-sudo apt-get install jpegoptim
-sudo apt-get install optipng
-sudo apt-get install pngquant
-sudo apt-get install gifsicle
-```
-
-Here's how to install the optimizers on MacOS (using [Homebrew](https://brew.sh/)):
+On Ubuntu:
 
 ```bash
-brew install jpegoptim
-brew install optipng
-brew install pngquant
-brew install gifsicle
+sudo apt-get install jpegoptim optipng pngquant gifsicle
 ```
 
-ImageOptimizer will try to find the executables in the following paths on your server, so please make sure you install the optimizers within these paths. You can customize these paths in the configuration file.
+On macOS with [Homebrew](https://brew.sh/):
 
+```bash
+brew install jpegoptim optipng pngquant gifsicle
+```
+
+The addon looks for the binaries in `PATH` and in these directories, which you can change in the config file:
+
+    /opt/homebrew/bin
+    /opt/homebrew/sbin
     /usr/local
     /usr/local/bin
     /usr/bin
     /usr/sbin
-    /usr/local/bin
     /usr/local/sbin
     /bin
     /sbin
 
-**Sounds pretty technical, huh? Don't worry: ImageOptimizer comes with batteries included!** 🔋⚡ 
+**Batteries included.** The addon ships precompiled versions of jpegoptim, pngquant, optipng and gifsicle. When an optimizer is not installed on the server, the included version is used. This works on most servers; if it does not, install the optimizer yourself as described above.
 
-The addon includes precompiled versions of these optimizers for Linux, MacOS and Windows. If an optimizer is not available on your server it will try to use the included version. This will work with most servers and configurations, but if for some reason it doesn't, you should try to install the optimizers using the above instructions.
+| Platform | Binaries |
+| --- | --- |
+| Linux x86_64 (glibc) | jpegoptim 1.5.6, pngquant 3.0.3, gifsicle 1.92, optipng 0.7.5 |
+| macOS 11+, Apple Silicon and Intel (universal) | jpegoptim 1.5.6, pngquant 2.18.0, gifsicle 1.96, optipng 0.7.8 |
+| Windows x64 | jpegoptim 1.5.6, pngquant 2.17.0, gifsicle 1.93, optipng 0.7.8 |
 
-You can see the 'status' of each optimizer command in the addon's utility screen. A *green dot* means the optimizer has been found on the server. An *orange dot* means the optimizer has not been found, so ImageOptimizer will try to use the included version during image optimizations. A *red dot* means the optimizer has not been found and a precompiled version of it is not available.  
+Linux on ARM (aarch64, for example AWS Graviton) has no bundled binaries: install the packages with `apt-get` as shown above. See `bin/BUILD.md` in the addon for where every binary comes from and how the macOS ones are built.
 
-## Customization
-Aside from using the included optimizers it is also possible to change their default configuration or add some custom optimization tools in the addon's configuration file. For each optimizer you will have to provide the mimetype of the images you want it to optimize and the command and arguments you would like to run on the server.
+The utility screen shows the status of every optimizer:
 
-You can use `:file` to reference the full path to the image you are optimizing and `:temp` to use a temporary output file if the optimizer requires it. The contents of the `:temp` file will automatically be copied back to the original file after the optimization.
+- *green*: found on the server.
+- *orange*: not found on the server, the included version will be used.
+- *red*: not found at all, or found but it cannot run on this server (for example an unsigned binary on macOS, or a build for another architecture). The reason is in the tooltip and in the log. That optimization is skipped.
 
-So for example, if you would like to use MozJPEG you could add the following to the configuration file:
+## WebP and AVIF
+WebP and AVIF are output formats: Glide converts your JPG and PNG sources when you ask for `format="webp"` on the tag, in a preset or in `image_manipulation.defaults`, and its `q` parameter sets the file size. The addon does not re-encode those files by default. If you upload WebP sources and want them shrunk, add [cwebp](https://developers.google.com/speed/webp/docs/cwebp) to the optimizers (`brew install webp` / `apt-get install webp`):
 
 ```php
 [
+    'executable' => 'cwebp',
+    'arguments'  => '-m 6 -pass 10 -mt -q 85 :file -o :temp',
+    'mimetype'   => 'image/webp',
+],
+```
 
-    'executable' => 'mozjpeg',
+Keep in mind that this also re-encodes Glide's WebP output, which is already lossy. AVIF cannot be optimized in place: `avifenc` does not read AVIF input. SVGs are not touched.
+
+## Customization
+You can change the arguments of the included optimizers or add your own in the config file. Every optimizer needs the mimetype it applies to, the executable and its arguments.
+
+Use `:file` for the full path of the image and `:temp` for a temporary output file when the tool cannot write in place. The `:temp` file replaces the image afterwards; if it is empty the image is left alone. An optimization is only written back when the result is smaller than the original.
+
+For example, to use MozJPEG:
+
+```php
+[
+    'executable' => 'cjpeg',
     'arguments'  => '-quality 85 -optimize -outfile :temp :file',
     'mimetype'   => 'image/jpeg',
-
 ],
-```  
+```
 
-Images in Asset containers that are not using the `local` filesystem driver will be copied to the local filesystem before optimization and copied back to their original filesystem afterwards, so you can safely use Amazon S3 or other drivers.
+## Remote disks
+Assets on containers that use a non-local filesystem driver (Amazon S3, DigitalOcean Spaces, SFTP, ...) are streamed to a temporary local file, optimized and streamed back. The same applies to the Glide cache when `image_manipulation.cache` in `config/statamic/assets.php` is set to a disk name. Every Glide image is optimized once, right after Glide generates it; clearing the Glide cache resets that.
+
+## Previously known as
+This addon was previously available as `4rn0/statamic-v3-image-optimizer`. It is now just *Statamic ImageOptimizer*.

@@ -14,9 +14,10 @@ return [
     'executable' => 'exécutable',
     'arguments' => 'paramètres',
     'mimetype' => 'mimetype',
-    'optimizer_no' => 'Non trouvé. Cette optimisation ne sera pas exécutée',
-    'optimizer_maybe' => 'Non trouvé. La version incluse sera utilisée : :path',
-    'optimizer_yes' => "Trouvé à l'endroit suivant : :path",
+    'optimizer_missing' => "Introuvable. Cette optimisation ne sera pas exécutée",
+    'optimizer_bundled' => "Introuvable. La version incluse sera utilisée : :path",
+    'optimizer_found' => "Trouvé dans le chemin suivant : :path",
+    'optimizer_broken' => "Trouvé dans :path, mais impossible à exécuter sur ce serveur. Cette optimisation ne sera pas exécutée",
 
     'original' => "La taille d'origine était",
     'reduced' => 'Réduit de',
@@ -29,6 +30,9 @@ return [
 
     'optimize' => 'Optimiser',
     'optimize-new' => 'Optimiser nouveau',
+    'error' => "L'optimisation a échoué",
+    'action' => "Optimiser l'image",
+    'queued' => "Mis en file d'attente pour optimisation",
     'optimize-again' => 'Optimiser à nouveau',
     
 ];

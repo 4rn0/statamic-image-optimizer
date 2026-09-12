@@ -1,22 +1,13 @@
 import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import { resolve } from 'path';
+import laravel from 'laravel-vite-plugin';
+import statamic from '@statamic/cms/vite-plugin';
 
 export default defineConfig({
-    plugins: [vue()],
-    build: {
-        outDir: 'resources/dist',
-        emptyOutDir: true,
-        rollupOptions: {
-            input: resolve(__dirname, 'resources/js/addon.js'),
-            output: {
-                entryFileNames: 'js/addon.js',
-                format: 'iife',
-                globals: {
-                    vue: 'Vue',
-                },
-            },
-            external: ['vue'],
-        },
-    },
+    plugins: [
+        laravel({
+            input: ['resources/js/addon.js'],
+            publicDirectory: 'resources/dist',
+        }),
+        statamic(),
+    ],
 });
