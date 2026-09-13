@@ -21,7 +21,7 @@ ARCH=$(uname -m)
 OUT=$(pwd)/build/linux-$ARCH
 WORK=$(mktemp -d)
 
-apk add --no-cache build-base curl tar file \
+apk add --no-cache build-base bash curl tar file \
     libjpeg-turbo-dev libjpeg-turbo-static libpng-dev libpng-static zlib-dev zlib-static
 
 # fetch <url> <sha256>: download into $WORK, verify, print the path
