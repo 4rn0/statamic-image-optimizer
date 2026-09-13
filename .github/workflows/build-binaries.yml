@@ -1,0 +1,27 @@
+name: Build Linux binaries
+
+# Manual. Builds bin/build-linux.sh on both architectures and uploads the results;
+# download the artifacts, copy them into bin/linux-<arch>/ and commit.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    name: linux-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD:/work" -w /work alpine:3.20 sh bin/build-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: build/linux-${{ matrix.arch }}/
+          if-no-files-found: error

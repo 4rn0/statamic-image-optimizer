@@ -1,36 +1,46 @@
 <template>
 
-    <div v-if="isImage" class="text-sm leading-tight">
+    <div class="text-sm leading-tight">
 
-        <div v-if="loading" class="flex items-center gap-2 text-gray-600 dark:text-gray-200">
+        <div v-if="busy" class="flex items-center gap-2 text-gray-600 dark:text-gray-200">
             <ui-icon name="loading" class="size-4" />
-            <span>{{ __('imageoptimizer::cp.optimizing') }}...</span>
+            <span>{{ __('imageoptimizer::cp.' + busy) }}...</span>
         </div>
 
         <div v-else>
 
-            <div v-if="assetValues && assetValues.imageoptimizer" class="space-y-1">
+            <div v-if="data" class="space-y-1">
                 <div class="text-gray-700 dark:text-gray-200">
                     <span class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.original') }}:</span>
-                    <span class="font-medium">{{ getBytes(assetValues.imageoptimizer.original_size) }}</span>
+                    <span class="font-medium">{{ getBytes(data.original_size) }}</span>
                 </div>
                 <div class="text-gray-700 dark:text-gray-200">
                     <span class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.reduced') }}:</span>
                     <span class="font-medium text-green-600 dark:text-emerald-300">{{ getBytes(savings) }} ({{ percentage }}%)</span>
                 </div>
-                <ui-button
-                    size="sm"
-                    class="mt-2"
-                    @click="doOptimize"
-                    :text="__('imageoptimizer::cp.optimize-again')"
-                />
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ data.original ? __('imageoptimizer::cp.original-kept') : __('imageoptimizer::cp.original-none') }}
+                </p>
+                <div class="flex gap-2 mt-2">
+                    <ui-button
+                        size="sm"
+                        @click="optimize"
+                        :text="__('imageoptimizer::cp.optimize-again')"
+                    />
+                    <ui-button
+                        v-if="data.original"
+                        size="sm"
+                        @click="revert"
+                        :text="__('imageoptimizer::cp.revert')"
+                    />
+                </div>
             </div>
 
             <div v-else class="space-y-1">
                 <p class="text-gray-600 dark:text-gray-200">{{ __('imageoptimizer::cp.not-optimized') }}</p>
                 <ui-button
                     size="sm"
-                    @click="doOptimize"
+                    @click="optimize"
                     :text="__('imageoptimizer::cp.optimize')"
                 />
             </div>
@@ -48,28 +58,21 @@ import { FieldtypeMixin as Fieldtype } from '@statamic/cms';
 
 export default {
 
-	mixins: [Fieldtype],
+    mixins: [Fieldtype],
 
     setup() {
         const { getBytes } = useBytes();
         return { getBytes };
     },
 
-    mounted() {
-        if (this.publishContainer) {
-            this.assetId = this.publishContainer.blueprint.handle + '::' + this.publishContainer.extraValues.path;
-            this.assetValues = this.publishContainer.values;
-        }
-    },
-
     data() {
 
         return {
 
-            assetId: null,
-            assetValues: null,
+            // The field is computed: the editor never saves it, so this local copy is the truth
+            data: this.value || null,
 
-            loading: false
+            busy: null
 
         };
 
@@ -77,24 +80,42 @@ export default {
 
     methods: {
 
-        doOptimize() {
+        optimize() {
 
-            const url = cp_url('utilities/imageoptimizer/' + btoa(this.assetId));
+            this.request('optimizing', cp_url('utilities/imageoptimizer/' + btoa(this.config.asset) + '?clearcache=1'));
+
+        },
+
+        revert() {
+
+            this.request('reverting', cp_url('utilities/imageoptimizer/' + btoa(this.config.asset) + '/revert'), response => {
+
+                if (!response.data.reverted) {
+                    Statamic.$toast.error(__('imageoptimizer::cp.revert-missing'));
+                }
+
+            });
+
+        },
+
+        request(busy, url, then) {
+
+            this.busy = busy;
 
             this.$axios.post(url).then(response => {
 
-                this.assetValues = response.data.asset.data.values;
-                this.loading = false;
+                this.data = response.data.asset.data.values.imageoptimizer || null;
+                this.busy = null;
+
+                if (then) then(response);
 
             })
             .catch(error => {
 
-                this.loading = false;
+                this.busy = null;
                 Statamic.$toast.error(error.response?.data?.message || __('imageoptimizer::cp.error'));
 
             });
-
-            this.loading = true;
 
         }
 
@@ -102,22 +123,13 @@ export default {
 
     computed: {
 
-        isImage: function() {
-            if (!this.publishContainer) return false;
-
-            const mimeType = this.publishContainer.extraValues?.mimeType;
-            const extension = this.publishContainer.extraValues?.extension;
-
-            return mimeType && mimeType.startsWith('image/') && extension !== 'svg';
-        },
-
         savings: function() {
-            if (!this.assetValues?.imageoptimizer) return 0;
-            return this.assetValues.imageoptimizer.original_size - this.assetValues.imageoptimizer.current_size;
+            if (!this.data) return 0;
+            return this.data.original_size - this.data.current_size;
         },
 
         percentage: function() {
-            const original = this.assetValues?.imageoptimizer?.original_size;
+            const original = this.data?.original_size;
             if (!original) return 0;
             return ((this.savings / original) * 100).toFixed(2);
         }

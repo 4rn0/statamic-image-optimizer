@@ -2,25 +2,33 @@
 
 namespace Arnohoogma\StatamicImageOptimizer;
 
+use Arnohoogma\StatamicImageOptimizer\Actions\DiscardOriginals;
 use Arnohoogma\StatamicImageOptimizer\Actions\OptimizeImages;
+use Arnohoogma\StatamicImageOptimizer\Actions\RevertImages;
 use Arnohoogma\StatamicImageOptimizer\Http\Controllers\ImageOptimizerController;
 use Arnohoogma\StatamicImageOptimizer\Listeners\TransformAssetContainerBlueprint;
+use Arnohoogma\StatamicImageOptimizer\Fieldtypes\ImageOptimizerExecutableFieldtype;
 use Arnohoogma\StatamicImageOptimizer\Fieldtypes\ImageOptimizerFieldtype;
 use Arnohoogma\StatamicImageOptimizer\Commands\ImageOptimizerCommand;
+use Arnohoogma\StatamicImageOptimizer\Listeners\DeleteOriginal;
 use Arnohoogma\StatamicImageOptimizer\Listeners\OptimizeAsset;
 use Arnohoogma\StatamicImageOptimizer\Listeners\OptimizeGlide;
+use Arnohoogma\StatamicImageOptimizer\UpdateScripts\ImportPublishedConfig;
 use Statamic\Providers\AddonServiceProvider;
 use Statamic\Events\AssetContainerBlueprintFound;
+use Statamic\Events\AssetDeleted;
 use Statamic\Events\GlideImageGenerated;
 use Statamic\Events\AssetUploaded;
 use Statamic\Events\AssetReuploaded;
+use Statamic\Facades\Permission;
 use Statamic\Facades\Utility;
-use Statamic\Statamic;
 
 class ServiceProvider extends AddonServiceProvider
 {
 
-    // Config and translations are loaded manually below, under the `imageoptimizer` key/namespace.
+    // No config file: every setting lives in the control panel (resources/settings.yaml is the form,
+    // Settings::DEFAULTS the defaults). Translations are loaded under the `imageoptimizer` namespace
+    // and published on request only.
     protected $config = false;
     protected $translations = false;
 
@@ -34,13 +42,16 @@ class ServiceProvider extends AddonServiceProvider
         AssetContainerBlueprintFound::class => [TransformAssetContainerBlueprint::class],
         GlideImageGenerated::class => [OptimizeGlide::class],
         AssetUploaded::class => [OptimizeAsset::class],
-        AssetReuploaded::class => [OptimizeAsset::class]
+        AssetReuploaded::class => [OptimizeAsset::class],
+        AssetDeleted::class => [DeleteOriginal::class]
 
     ];
 
     protected $actions = [
 
-        OptimizeImages::class
+        OptimizeImages::class,
+        RevertImages::class,
+        DiscardOriginals::class
 
     ];
 
@@ -50,23 +61,44 @@ class ServiceProvider extends AddonServiceProvider
 
     ];
 
+    protected $updateScripts = [
+
+        ImportPublishedConfig::class
+
+    ];
+
     protected $fieldtypes = [
 
-        ImageOptimizerFieldtype::class
+        ImageOptimizerFieldtype::class,
+        ImageOptimizerExecutableFieldtype::class
 
     ];
 
     public function bootAddon()
     {
 
-		$this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'statamic.imageoptimizer');
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'imageoptimizer');
-
-        $this->publishes([__DIR__ . '/../config/config.php' => config_path('statamic/imageoptimizer.php')], 'imageoptimizer-config');
         $this->publishes([__DIR__ . '/../resources/lang' => lang_path('vendor/imageoptimizer')], 'imageoptimizer-lang');
 
 		$this->createUtility();
-		$this->publishAssets();
+		$this->registerPermission();
+
+    }
+
+    private function registerPermission()
+    {
+
+        Permission::extend(function () {
+
+            Permission::group('utilities', __('statamic::permissions.group_utilities'), function () {
+
+                Permission::register(Settings::PERMISSION)
+                    ->label(__('imageoptimizer::cp.permission'))
+                    ->description(__('imageoptimizer::cp.permission_description'));
+
+            });
+
+        });
 
     }
 
@@ -85,25 +117,18 @@ class ServiceProvider extends AddonServiceProvider
             $utility->routes(function($router) {
 
                 $router->get('/', [ImageOptimizerController::class, 'index'])->name('index');
+                $router->get('/images', [ImageOptimizerController::class, 'images'])->name('images');
                 $router->post('/run', [ImageOptimizerController::class, 'run'])->name('run');
                 $router->get('/run/{run}', [ImageOptimizerController::class, 'progress'])->name('progress');
+                $router->patch('/settings', [ImageOptimizerController::class, 'saveSettings'])->name('settings');
+                $router->get('/report.csv', [ImageOptimizerController::class, 'export'])->name('export');
                 $router->post('/{encoded_asset}', [ImageOptimizerController::class, 'optimize'])->name('optimize');
+                $router->post('/{encoded_asset}/revert', [ImageOptimizerController::class, 'revert'])->name('revert');
 
             });
         });
 
 	}
 
-	private function publishAssets()
-    {
-
-		Statamic::afterInstalled(function($command) {
-
-            $command->call('vendor:publish', ['--tag' => 'imageoptimizer-config']);
-            $command->call('vendor:publish', ['--tag' => 'imageoptimizer-lang']);
-
-        });
-
-    }
 
 }

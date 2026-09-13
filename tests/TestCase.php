@@ -3,7 +3,9 @@
 namespace Tests;
 
 use Arnohoogma\StatamicImageOptimizer\ServiceProvider;
+use Arnohoogma\StatamicImageOptimizer\Settings;
 use Illuminate\Support\Facades\Storage;
+use Statamic\Facades\Addon;
 use Statamic\Facades\AssetContainer;
 use Statamic\Testing\AddonTestCase;
 use Statamic\Testing\Concerns\PreventsSavingStacheItemsToDisk;
@@ -44,10 +46,30 @@ abstract class TestCase extends AddonTestCase
 
     }
 
+    protected function tearDown(): void
+    {
+
+        // Settings saved in a test land in resources/addons/ of the testbench skeleton
+        $this->resetSettings();
+
+        parent::tearDown();
+
+    }
+
+    /**
+     * Forget everything saved through Settings::save(), including setUp's optimizer stub
+     */
+    protected function resetSettings()
+    {
+
+        Addon::get(Settings::PACKAGE)->settings()->delete();
+
+    }
+
     protected function useOptimizer($executable, $arguments, $mimetype = 'image/png')
     {
 
-        config(['statamic.imageoptimizer.optimizers' => [[
+        Settings::save(['optimizers' => [[
             'executable' => $executable,
             'arguments' => $arguments,
             'mimetype' => $mimetype,

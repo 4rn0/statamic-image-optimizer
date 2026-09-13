@@ -5,13 +5,17 @@ namespace Arnohoogma\StatamicImageOptimizer\Http\Controllers;
 use Statamic\Http\Resources\CP\Assets\Asset as AssetResource;
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
 use Arnohoogma\StatamicImageOptimizer\Jobs\OptimizeAssetJob;
+use Arnohoogma\StatamicImageOptimizer\Report;
+use Arnohoogma\StatamicImageOptimizer\Settings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Statamic\CP\PublishForm;
 use Statamic\Facades\User;
 use Statamic\Http\Controllers\CP\CpController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use Statamic\Facades\Asset;
+use Statamic\Facades\Glide;
 use Statamic\Facades\Utility;
 use Inertia\Inertia;
 
@@ -20,36 +24,19 @@ class ImageOptimizerController extends CpController {
 	public function index(Request $request)
 	{
 
-        $optimizers = config('statamic.imageoptimizer.optimizers');
         $optimizer = new ImageOptimizer();
 
-        foreach ($optimizers as &$item) {
-
-            $bundled = $optimizer->findBundledBinary($item['executable']);
-            $path = $optimizer->findBinary($item['executable']) ?: $bundled;
-
-            $item['path'] = $path ?: null;
-            $item['status'] = match (true) {
-                !$path => 'missing',
-                !$optimizer->canRun($path) => 'broken',
-                $path === $bundled => 'bundled',
-                default => 'found',
-            };
-
-        }
+        $optimizers = collect(Settings::get('optimizers'))
+            ->map(fn ($item) => $item + $optimizer->status($item['executable']))
+            ->all();
 
         return Inertia::render('imageoptimizer::Utility', [
 
-            'stats' => $this->getStatistics(),
+            'report' => Report::current(),
             'optimizers' => $optimizers,
-            'configPath' => config_path('statamic/imageoptimizer.php'),
             'docsUrl' => Utility::find('ImageOptimizer')->docsUrl(),
+            'settings' => $this->settingsForm(),
             'queued' => $this->queued(),
-            'config' => [
-                'assets' => config('statamic.imageoptimizer.assets'),
-                'glide' => config('statamic.imageoptimizer.glide'),
-                'log' => config('statamic.imageoptimizer.log'),
-            ],
 
         ]);
 
@@ -69,19 +56,44 @@ class ImageOptimizerController extends CpController {
 
         $response = ['asset' => new AssetResource($asset)];
 
-        if ($request->has('statistics')) {
+        if ($request->has('report')) {
 
-            $response['stats'] = $this->getStatistics();
+            $response['report'] = Report::build();
 
         }
 
         if ($request->has('clearcache')) {
 
-            Artisan::call('statamic:glide:clear');
+            Glide::clearAsset($asset);
 
         }
 
     	return response()->json($response);
+
+    }
+
+    public function revert(Request $request, $asset)
+    {
+
+        $asset = Asset::find(base64_decode($asset));
+
+        abort_unless($asset && $asset->isImage(), 404);
+
+        $this->authorize('edit', $asset);
+
+        $reverted = (new ImageOptimizer)->revertAsset($asset);
+
+        return response()->json(['asset' => new AssetResource($asset), 'reverted' => $reverted]);
+
+    }
+
+    /**
+     * The images a run would touch, for the request-per-image loop without a queue
+     */
+    public function images(Request $request)
+    {
+
+        return response()->json(['images' => $this->assets($request->input('only'))->map->id()->values()]);
 
     }
 
@@ -91,15 +103,7 @@ class ImageOptimizerController extends CpController {
     public function run(Request $request)
     {
 
-        $assets = Asset::all()->filter->isImage();
-
-        if ($request->input('only') === 'new') {
-
-            $assets = $assets->reject(fn ($asset) => $asset->get('imageoptimizer'));
-
-        }
-
-        $assets = $assets->filter(fn ($asset) => User::current()->can('edit', $asset));
+        $assets = $this->assets($request->input('only'));
 
         $run = Str::uuid()->toString();
 
@@ -113,7 +117,7 @@ class ImageOptimizerController extends CpController {
     }
 
     /**
-     * Progress of a bulk run; clears the Glide cache and returns statistics once it is done
+     * Progress of a bulk run; clears the Glide cache and rebuilds the report once it is done
      */
     public function progress($run)
     {
@@ -132,9 +136,11 @@ class ImageOptimizerController extends CpController {
 
                 Artisan::call('statamic:glide:clear');
 
+                Report::build();
+
             }
 
-            $response['stats'] = $this->getStatistics();
+            $response['report'] = Report::get();
 
         }
 
@@ -142,46 +148,97 @@ class ImageOptimizerController extends CpController {
 
     }
 
-    private function queued()
+    /**
+     * One CSV row per image
+     */
+    public function export()
     {
 
-        return config('queue.default') !== 'sync';
+        return response()->streamDownload(function () {
+
+            $output = fopen('php://output', 'w');
+
+            fputcsv($output, ['container', 'path', 'original_size', 'current_size', 'saved', 'percent', 'optimized_at', 'original_kept']);
+
+            foreach (Report::rows() as $row) {
+
+                fputcsv($output, $row);
+
+            }
+
+            fclose($output);
+
+        }, 'imageoptimizer-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
 
     }
 
-    private function getStatistics()
+    /**
+     * The images the current user may optimize: all of them, or only the ones never optimized
+     *
+     * @param string|null $only
+     * @return \Illuminate\Support\Collection
+     */
+    private function assets($only)
     {
 
         $assets = Asset::all()->filter->isImage();
 
-        $optimized = collect();
-        $original = collect();
-        $current = collect();
-        $images = collect();
+        if ($only === 'new') {
 
-        foreach ($assets as $asset)
-        {
-
-            if ($data = $asset->get('imageoptimizer')) {
-
-                $original->push( $data['original_size'] ?? 0 );
-                $current->push( $data['current_size'] ?? 0 );
-                $optimized->push( $asset->id() );
-                
-            }
-
-            $images->push( $asset->id() );
+            $assets = $assets->reject(fn ($asset) => $asset->get('imageoptimizer'));
 
         }
 
+        return $assets->filter(fn ($asset) => User::current()->can('edit', $asset))->values();
+
+    }
+
+    /**
+     * Validate and save the settings form
+     */
+    public function saveSettings(Request $request)
+    {
+
+        Settings::save(PublishForm::make(Settings::blueprint($this->canEditOptimizers()))->submit($request->all()));
+
+        return response()->json(['saved' => true]);
+
+    }
+
+    /**
+     * The settings form on the utility page: what Statamic's own settings page would render
+     *
+     * @return array
+     */
+    private function settingsForm()
+    {
+
+        // The effective values: what was saved, or the defaults until then
+        $blueprint = Settings::blueprint($this->canEditOptimizers());
+        $fields = $blueprint->fields()->addValues(collect(Settings::for())->only(Settings::EDITABLE)->all())->preProcess();
+
         return [
-
-            'original_size' => $original->sum(),
-            'current_size' => $current->sum(),
-            'optimized' => $optimized,
-            'images' => $images
-
+            'blueprint' => $blueprint->toPublishArray(),
+            'values' => $fields->values(),
+            'meta' => $fields->meta(),
+            'submitUrl' => cp_route('utilities.imageoptimizer.settings'),
         ];
+
+    }
+
+    private function canEditOptimizers()
+    {
+
+        $user = User::current();
+
+        return $user->isSuper() || $user->hasPermission(Settings::PERMISSION);
+
+    }
+
+    private function queued()
+    {
+
+        return config('queue.default') !== 'sync';
 
     }
 

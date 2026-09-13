@@ -1,0 +1,76 @@
+tabs:
+  main:
+    sections:
+      -
+        fields:
+          -
+            handle: assets
+            field:
+              type: toggle
+              display: 'imageoptimizer::cp.asset'
+              instructions: 'imageoptimizer::cp.asset_instructions'
+              default: true
+          -
+            handle: glide
+            field:
+              type: toggle
+              display: 'imageoptimizer::cp.glide'
+              instructions: 'imageoptimizer::cp.glide_instructions'
+              default: true
+          -
+            handle: originals
+            field:
+              type: toggle
+              display: 'imageoptimizer::cp.originals'
+              instructions: 'imageoptimizer::cp.originals_instructions'
+              default: true
+          -
+            handle: log
+            field:
+              type: toggle
+              display: 'imageoptimizer::cp.log'
+              instructions: 'imageoptimizer::cp.log_instructions'
+              default: false
+      # Only offered to users with the "edit ImageOptimizer optimizers" permission: these are shell commands
+      -
+        display: 'imageoptimizer::cp.optimizers'
+        instructions: 'imageoptimizer::cp.optimizers_instructions'
+        fields:
+          -
+            handle: optimizers
+            field:
+              type: grid
+              mode: table
+              display: 'imageoptimizer::cp.optimizers'
+              hide_display: true
+              fields:
+                -
+                  handle: executable
+                  field:
+                    type: image_optimizer_executable
+                    display: 'imageoptimizer::cp.executable'
+                    width: 25
+                    validate:
+                      - required
+                -
+                  handle: arguments
+                  field:
+                    type: text
+                    display: 'imageoptimizer::cp.arguments'
+                    width: 50
+                    validate:
+                      - required
+                -
+                  handle: mimetype
+                  field:
+                    type: text
+                    display: 'imageoptimizer::cp.mimetype'
+                    width: 25
+                    validate:
+                      - required
+          -
+            handle: paths
+            field:
+              type: list
+              display: 'imageoptimizer::cp.paths'
+              instructions: 'imageoptimizer::cp.paths_instructions'

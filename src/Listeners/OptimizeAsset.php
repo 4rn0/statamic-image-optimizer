@@ -3,6 +3,8 @@
 namespace Arnohoogma\StatamicImageOptimizer\Listeners;
 
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
+use Arnohoogma\StatamicImageOptimizer\Report;
+use Arnohoogma\StatamicImageOptimizer\Settings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Statamic\Events\AssetUploaded;
 use Statamic\Events\AssetReuploaded;
@@ -15,20 +17,30 @@ class OptimizeAsset implements ShouldQueue
 
         $asset = $event->asset;
 
-        if (!$asset->isImage() || !config('statamic.imageoptimizer.assets')) {
+        if (!$asset->isImage()) {
 
             return;
 
         }
 
-        // A reupload is a new file: start the statistics over.
-        if ($event instanceof AssetReuploaded) {
+        if (!Settings::get('assets', $asset->container())) {
 
-            $asset->remove('imageoptimizer');
+            Report::touch();
+
+            return;
 
         }
 
         $optimizer = new ImageOptimizer();
+
+        // A reupload is a new file: drop the old original and start the statistics over.
+        if ($event instanceof AssetReuploaded) {
+
+            $optimizer->deleteOriginal($asset);
+            $asset->remove('imageoptimizer');
+
+        }
+
         $optimizer->optimizeAsset($asset);
 
     }

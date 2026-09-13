@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
+use Arnohoogma\StatamicImageOptimizer\Settings;
 use Illuminate\Support\Facades\Storage;
 use Statamic\Facades\Asset;
 use Tests\TestCase;
@@ -34,7 +35,10 @@ class OptimizeAssetTest extends TestCase
         (new ImageOptimizer)->optimizeAsset($asset);
         (new ImageOptimizer)->optimizeAsset(Asset::find('test::image.png'));
 
-        $this->assertSame(['original_size' => 1070, 'current_size' => 70], Asset::find('test::image.png')->get('imageoptimizer'));
+        $data = Asset::find('test::image.png')->get('imageoptimizer');
+
+        $this->assertSame(1070, $data['original_size']);
+        $this->assertSame(70, $data['current_size']);
 
     }
 
@@ -48,7 +52,8 @@ class OptimizeAssetTest extends TestCase
         (new ImageOptimizer)->optimizeAsset($asset);
 
         $this->assertSame(1070, Storage::disk('test')->size('image.png'));
-        $this->assertSame(['original_size' => 1070, 'current_size' => 1070], Asset::find('test::image.png')->get('imageoptimizer'));
+        $this->assertSame(1070, Asset::find('test::image.png')->get('imageoptimizer')['original_size']);
+        $this->assertSame(1070, Asset::find('test::image.png')->get('imageoptimizer')['current_size']);
 
     }
 
@@ -111,7 +116,7 @@ class OptimizeAssetTest extends TestCase
 
         $log = [];
 
-        config(['statamic.imageoptimizer.optimizers' => [
+        Settings::save(['optimizers' => [
             ['executable' => 'head', 'arguments' => '-c 70 :file > :temp', 'mimetype' => 'image/png'],
             ['executable' => 'head', 'arguments' => '-c 10 :file > :temp', 'mimetype' => 'image/gif'],
         ]]);
@@ -119,6 +124,67 @@ class OptimizeAssetTest extends TestCase
         (new ImageOptimizer)->optimizeAsset($this->makeImage());
 
         $this->assertSame(70, Storage::disk('test')->size('image.png'));
+
+    }
+
+    /**
+     * A WebP container with one chunk: lossy (VP8 ), lossless (VP8L) or extended (VP8X) with flags
+     */
+    private function webp($fourcc, $flags = 0)
+    {
+
+        return 'RIFF' . pack('V', 118) . 'WEBP' . $fourcc . pack('V', 10) . chr($flags) . str_repeat("\0", 99);
+
+    }
+
+    public function test_it_optimizes_lossy_webp_only()
+    {
+
+        $this->useOptimizer('head', '-c 20 :file > :temp', 'image/webp');
+
+        Storage::disk('test')->put('lossy.webp', $this->webp('VP8 '));
+        Storage::disk('test')->put('lossless.webp', $this->webp('VP8L'));
+        Storage::disk('test')->put('animated.webp', $this->webp('VP8X', 0x02));
+        Storage::disk('test')->put('extended.webp', $this->webp('VP8X', 0x10));
+
+        foreach (['lossy', 'lossless', 'animated', 'extended'] as $name) {
+
+            (new ImageOptimizer)->optimizeAsset(tap(\Statamic\Facades\AssetContainer::find('test')->makeAsset($name . '.webp'))->save());
+
+        }
+
+        $this->assertSame(20, Storage::disk('test')->size('lossy.webp'));
+        $this->assertSame(120, Storage::disk('test')->size('lossless.webp'));
+        $this->assertSame(120, Storage::disk('test')->size('animated.webp'));
+        $this->assertSame(20, Storage::disk('test')->size('extended.webp'));
+
+    }
+
+    public function test_the_webp_sniff_finds_lossless_data_behind_other_chunks()
+    {
+
+        $optimizer = new ImageOptimizer;
+
+        // VP8X (no animation), an odd-sized ICCP chunk with padding, then VP8L
+        $file = 'RIFF' . pack('V', 0) . 'WEBP'
+            . 'VP8X' . pack('V', 10) . chr(0x20) . str_repeat("\0", 9)
+            . 'ICCP' . pack('V', 3) . 'abc' . "\0"
+            . 'VP8L' . pack('V', 5) . 'hello' . "\0";
+
+        $path = tempnam(sys_get_temp_dir(), 'imageoptimizer');
+        file_put_contents($path, $file);
+
+        $this->assertTrue($optimizer->isLosslessOrAnimatedWebp($path));
+
+        file_put_contents($path, str_replace('VP8L', 'VP8 ', $file));
+
+        $this->assertFalse($optimizer->isLosslessOrAnimatedWebp($path));
+
+        file_put_contents($path, $this->png());
+
+        $this->assertFalse($optimizer->isLosslessOrAnimatedWebp($path));
+
+        unlink($path);
 
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Arnohoogma\StatamicImageOptimizer\Report;
 use Illuminate\Support\Facades\Storage;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
@@ -21,6 +22,7 @@ class CommandTest extends TestCase
         $this->assertSame(70, Storage::disk('test')->size('a.png'));
         $this->assertSame(70, Storage::disk('test')->size('b.png'));
         $this->assertSame(70, Asset::find('test::a.png')->get('imageoptimizer')['current_size']);
+        $this->assertSame(2, Report::get()['totals']['optimized']);
 
     }
 
@@ -48,6 +50,8 @@ class CommandTest extends TestCase
             ->doesntExpectOutput('test::a.png')
             ->expectsOutput('test::b.png')
             ->assertSuccessful();
+
+        $this->assertNull(Report::get());
 
     }
 

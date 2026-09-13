@@ -3,6 +3,7 @@
 namespace Arnohoogma\StatamicImageOptimizer\Commands;
 
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
+use Arnohoogma\StatamicImageOptimizer\Report;
 use Statamic\Console\RunsInPlease;
 use Illuminate\Console\Command;
 use Statamic\Facades\Asset;
@@ -62,6 +63,8 @@ class ImageOptimizerCommand extends Command
         }
 
         $this->output->progressFinish();
+
+        Report::build();
 
         $this->info('Your image Assets have been optimized.');
 

@@ -1,0 +1,6 @@
+/* The utility page doubles as the printable savings report */
+@media print {
+    .imageoptimizer-no-print {
+        display: none !important;
+    }
+}

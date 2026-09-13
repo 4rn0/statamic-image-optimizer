@@ -1,49 +1,98 @@
 <template>
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-8">
 
-        <div class="flex items-center justify-between">
+    <!-- Header and loader share one flex child, so the page gap does not open up between them -->
+    <div>
+    <ui-header :title="__('imageoptimizer::cp.title')" icon="assets">
+        <div v-if="!busy" class="flex gap-2 imageoptimizer-no-print">
+            <ui-button
+                variant="primary"
+                @click="optimizeAll"
+                :text="__('imageoptimizer::cp.optimize')"
+            />
+            <ui-button
+                v-if="figures.totals.images > figures.totals.optimized"
+                @click="optimizeNew"
+                :text="__('imageoptimizer::cp.optimize-new')"
+            />
+        </div>
+    </ui-header>
+
+    <div v-if="busy" class="-mt-4 space-y-2">
+        <div v-if="total" class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+                class="h-full bg-blue-500 transition-all duration-300 ease-out rounded-full"
+                :style="{ width: progress }"
+            ></div>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <ui-icon name="loading" class="size-4" />
+            <span v-if="total">{{ __('imageoptimizer::cp.progress', { current: Math.min(index + 1, total), total }) }}</span>
+            <span v-else>{{ __('imageoptimizer::cp.optimizing') }}...</span>
+        </div>
+    </div>
+    </div>
+
+    <ui-panel>
+        <ui-panel-header class="flex items-center justify-between gap-4">
+            <ui-heading>{{ __('imageoptimizer::cp.report') }}</ui-heading>
+            <ui-button
+                v-if="!busy"
+                size="sm"
+                class="imageoptimizer-no-print"
+                @click="exportCsv"
+                :text="__('imageoptimizer::cp.export')"
+            />
+        </ui-panel-header>
+        <ui-card class="flex flex-col gap-4">
+
             <div class="text-sm text-gray-700 dark:text-gray-200">
-                <template v-if="statistics.images.length">
-                    <span class="font-medium">{{ statistics.optimized.length }}</span> {{ __('imageoptimizer::cp.of') }} <span class="font-medium">{{ statistics.images.length }}</span> {{ __('imageoptimizer::cp.images') }} {{ __('imageoptimizer::cp.optimized') }}
-                    <span v-if="filesize" class="text-green-600 dark:text-emerald-300 font-medium">
-                        — {{ __('imageoptimizer::cp.reduced') }} {{ getBytes(filesize) }} ({{ percentage }}%)
-                    </span>
-                </template>
-                <template v-else>
-                    <span class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.empty') }}</span>
-                </template>
+                <div v-html="__('imageoptimizer::cp.summary', { optimized: figures.totals.optimized, images: figures.totals.images, saved: getBytes(saved), percent })"></div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.as-of', { time: generated }) }}</div>
             </div>
 
-            <div v-if="statistics.images.length && !optimizing" class="flex gap-2">
-                <ui-button
-                    size="sm"
-                    variant="primary"
-                    @click="doOptimizeAll"
-                    :text="__('imageoptimizer::cp.optimize')"
-                />
-                <ui-button
-                    v-if="statistics.images.length > statistics.optimized.length"
-                    size="sm"
-                    @click="doOptimizeNew"
-                    :text="__('imageoptimizer::cp.optimize-new')"
-                />
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th v-if="multiple" class="text-left">{{ __('imageoptimizer::cp.container') }}</th>
+                            <th>{{ __('imageoptimizer::cp.images') }}</th>
+                            <th>{{ __('imageoptimizer::cp.optimized') }}</th>
+                            <th>{{ __('imageoptimizer::cp.original-size') }}</th>
+                            <th>{{ __('imageoptimizer::cp.current-size') }}</th>
+                            <th>{{ __('imageoptimizer::cp.saved') }}</th>
+                            <th>{{ __('imageoptimizer::cp.originals-size') }}</th>
+                            <th class="text-left">{{ __('imageoptimizer::cp.last-optimized') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="container in figures.containers" :key="container.handle">
+                            <td v-if="multiple">{{ container.title }}</td>
+                            <td>{{ container.images }}</td>
+                            <td>{{ container.optimized }}</td>
+                            <td>{{ getBytes(container.original_size) }}</td>
+                            <td>{{ getBytes(container.current_size) }}</td>
+                            <td class="text-green-600 dark:text-emerald-300">{{ getBytes(container.original_size - container.current_size) }} ({{ percentOf(container) }}%)</td>
+                            <td>{{ getBytes(container.originals_size) }}</td>
+                            <td>{{ container.last_optimized_at ? date(container.last_optimized_at) : '' }}</td>
+                        </tr>
+                        <tr v-if="multiple" class="font-medium">
+                            <td>{{ __('imageoptimizer::cp.total') }}</td>
+                            <td>{{ figures.totals.images }}</td>
+                            <td>{{ figures.totals.optimized }}</td>
+                            <td>{{ getBytes(figures.totals.original_size) }}</td>
+                            <td>{{ getBytes(figures.totals.current_size) }}</td>
+                            <td class="text-green-600 dark:text-emerald-300">{{ getBytes(saved) }} ({{ percent }}%)</td>
+                            <td>{{ getBytes(figures.totals.originals_size) }}</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-        </div>
 
-        <div v-if="optimizing" class="space-y-2">
-            <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                    class="h-full bg-blue-500 transition-all duration-300 ease-out rounded-full"
-                    :style="{ width: progress }"
-                ></div>
-            </div>
-            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <ui-icon name="loading" class="size-4" />
-                <span>{{ __('imageoptimizer::cp.optimizing') }} {{ Math.min(index + 1, list.length) }} {{ __('imageoptimizer::cp.of') }} {{ list.length }}</span>
-                <span v-if="current" class="text-gray-400 dark:text-gray-400 truncate">({{ current }})</span>
-            </div>
-        </div>
+        </ui-card>
+    </ui-panel>
 
     </div>
 
@@ -55,7 +104,10 @@ import { useBytes } from '../composables/useBytes.js';
 
 export default {
 
-    props: ['stats', 'queued'],
+    props: {
+        report: Object,
+        queued: Boolean,
+    },
 
     setup() {
         const { getBytes } = useBytes();
@@ -66,47 +118,61 @@ export default {
 
         return {
 
-            optimizing: false,
-            store: false,
+            // 'optimizing' while a run is going
+            busy: null,
+
+            // the report as rebuilt by the server after a run or a refresh; the prop is the one from page load
+            store: null,
+
             list: [],
             index: 0,
+            total: 0,
             run: null,
+            timer: null,
 
         };
 
     },
 
+    beforeUnmount() {
+
+        clearTimeout(this.timer);
+
+    },
+
     methods: {
 
-        doOptimizeNew() {
+        optimizeAll() {
 
-            if (this.queued) return this.doRun('new');
-
-            this.list = this.statistics.images.filter(item => this.statistics.optimized.indexOf(item) < 0);
-            this.doOptimize();
+            this.queued ? this.startRun('all') : this.startLoop('all');
 
         },
 
-        doOptimizeAll() {
+        optimizeNew() {
 
-            if (this.queued) return this.doRun('all');
+            this.queued ? this.startRun('new') : this.startLoop('new');
 
-            this.list = this.statistics.images;
-            this.doOptimize();
+        },
+
+        exportCsv() {
+
+            window.location = cp_url('utilities/imageoptimizer/report.csv');
 
         },
 
         // With a queue: one request starts the run, then poll its progress
-        doRun(only) {
+        startRun(only) {
 
-            this.optimizing = true;
+            this.busy = 'optimizing';
+            this.total = 0;
 
             this.$axios.post(cp_url('utilities/imageoptimizer/run'), { only }).then(response => {
 
-                this.run = response.data;
-                this.list = new Array(response.data.total);
+                this.run = response.data.run;
+                this.total = response.data.total;
                 this.index = 0;
-                this.poll();
+
+                this.total ? this.poll() : this.finish(this.figures);
 
             })
             .catch(error => this.fail(error));
@@ -115,64 +181,100 @@ export default {
 
         poll() {
 
-            this.$axios.get(cp_url('utilities/imageoptimizer/run/' + this.run.run)).then(response => {
+            this.$axios.get(cp_url('utilities/imageoptimizer/run/' + this.run)).then(response => {
 
                 this.index = response.data.done;
 
                 if (response.data.done < response.data.total) {
 
-                    setTimeout(this.poll, 1500);
+                    this.timer = setTimeout(this.poll, 1500);
 
                 }
 
                 else {
 
-                    this.optimizing = false;
-                    this.index = 0;
-                    this.store = response.data.stats;
+                    this.finish(response.data.report);
 
                 }
 
             })
             .catch(error => this.fail(error));
+
+        },
+
+        // Without a queue: fetch the list, then optimize one image per request
+        startLoop(only) {
+
+            this.busy = 'optimizing';
+            this.total = 0;
+
+            this.$axios.get(cp_url('utilities/imageoptimizer/images?only=' + only)).then(response => {
+
+                this.list = response.data.images;
+                this.total = this.list.length;
+                this.index = 0;
+
+                this.total ? this.next() : this.finish(this.figures);
+
+            })
+            .catch(error => this.fail(error));
+
+        },
+
+        next() {
+
+            const last = this.index === this.list.length - 1;
+            const url = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + '?clearcache=1' + (last ? '&report=1' : ''));
+
+            this.$axios.post(url).then(response => {
+
+                if (last) {
+
+                    this.finish(response.data.report);
+
+                }
+
+                else {
+
+                    this.index++;
+                    this.next();
+
+                }
+
+            })
+            .catch(error => this.fail(error));
+
+        },
+
+        finish(report) {
+
+            this.store = report;
+            this.busy = null;
+            this.total = 0;
+            this.index = 0;
 
         },
 
         fail(error) {
 
-            this.optimizing = false;
+            clearTimeout(this.timer);
+            this.busy = null;
+            this.total = 0;
             this.index = 0;
             Statamic.$toast.error(error.response?.data?.message || __('imageoptimizer::cp.error'));
 
         },
 
-        // Without a queue: optimize one image per request
-        doOptimize() {
+        percentOf(row) {
 
-            const last = this.index == this.list.length - 1;
-            const url = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + (last ? '?statistics=1&clearcache=1' : ''));
+            if (!row.original_size) return 0;
+            return (((row.original_size - row.current_size) / row.original_size) * 100).toFixed(2);
 
-            this.$axios.post(url).then(response => {
+        },
 
-                if (!last) {
+        date(timestamp) {
 
-                    this.$nextTick(this.doOptimize);
-                    this.index++;
-
-                }
-
-                else {
-
-                    this.optimizing = false;
-                    this.index = 0;
-                    this.store = response.data.stats;
-
-                }
-
-            })
-            .catch(error => this.fail(error));
-
-            this.optimizing = true;
+            return new Date(timestamp * 1000).toLocaleDateString();
 
         }
 
@@ -180,35 +282,41 @@ export default {
 
     computed: {
 
-        statistics() {
+        figures() {
 
-            return this.store ? this.store : this.stats;
-
-        },
-
-        filesize() {
-
-            return this.statistics.original_size - this.statistics.current_size;
+            return this.store || this.report;
 
         },
 
-        percentage() {
+        // One container: no container column, no totals row
+        multiple() {
 
-            if (!this.statistics.original_size) return 0;
-            return ((this.filesize / this.statistics.original_size) * 100).toFixed(2);
+            return this.figures.containers.length > 1;
+
+        },
+
+        saved() {
+
+            return this.figures.totals.original_size - this.figures.totals.current_size;
+
+        },
+
+        percent() {
+
+            return this.percentOf(this.figures.totals);
+
+        },
+
+        generated() {
+
+            return new Date(this.figures.generated_at * 1000).toLocaleString();
 
         },
 
         progress() {
 
             // the item in progress counts, so the bar reaches 100% while the last one runs
-            return ((Math.min(this.index + 1, this.list.length) / this.list.length) * 100) + '%';
-
-        },
-
-        current() {
-
-            return this.list[this.index];
+            return ((Math.min(this.index + 1, this.total) / this.total) * 100) + '%';
 
         }
 

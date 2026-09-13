@@ -1,0 +1,13 @@
+# Keep the Composer dist archive to what a site needs: src, bin, config, resources (built), docs.
+/.github            export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/.nvmrc             export-ignore
+/tests              export-ignore
+/phpunit.xml        export-ignore
+/package.json       export-ignore
+/package-lock.json  export-ignore
+/vite.config.js     export-ignore
+/resources/js       export-ignore
+/resources/css      export-ignore
+/PLAN-2.0.md        export-ignore

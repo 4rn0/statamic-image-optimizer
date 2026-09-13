@@ -1,6 +1,6 @@
 {
     "name": "4rn0/statamic-image-optimizer",
-    "description": "Statamic Image Optimizer addon",
+    "description": "Optimizes JPEG, PNG, GIF and WebP assets and Glide images with jpegoptim, pngquant, optipng, gifsicle and cwebp. Keeps originals, reverts, reports savings.",
     "type": "statamic-addon",
     "license": "proprietary",
     "keywords": [
@@ -12,12 +12,14 @@
         "jpegoptim",
         "pngquant",
         "optipng",
-        "gifsicle"
+        "gifsicle",
+        "cwebp",
+        "webp"
     ],
     "require": {
         "php": "^8.3",
         "ext-fileinfo": "*",
-        "statamic/cms": "^6.0",
+        "statamic/cms": "^6.5",
         "symfony/process": "^7.0"
     },
     "require-dev": {
@@ -51,7 +53,7 @@
     "extra": {
         "statamic": {
             "name": "Statamic Image Optimizer",
-            "description": "Statamic Image Optimizer addon"
+            "description": "Optimizes JPEG, PNG, GIF and WebP assets and Glide images. Keeps originals, reverts, reports savings."
         },
         "laravel": {
             "providers": [

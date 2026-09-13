@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use Arnohoogma\StatamicImageOptimizer\ImageOptimizer;
+use Arnohoogma\StatamicImageOptimizer\Settings;
 use Tests\TestCase;
 
 class FindBinaryTest extends TestCase
@@ -58,6 +59,88 @@ class FindBinaryTest extends TestCase
         $this->assertTrue(is_executable((new ImageOptimizer)->findBinary('jpegoptim') ?? ''));
 
         chmod($bundled, $original);
+
+    }
+
+    public function test_every_bundled_binary_can_run_on_this_platform()
+    {
+
+        $optimizer = new ImageOptimizer;
+
+        foreach (['jpegoptim', 'pngquant', 'optipng', 'gifsicle', 'cwebp'] as $name) {
+
+            $bundled = $optimizer->findBundledBinary($name);
+
+            if (!$bundled) {
+
+                $this->markTestSkipped('No bundled binaries for ' . PHP_OS);
+
+            }
+
+            $this->assertTrue($optimizer->canRun($bundled), $name);
+
+        }
+
+    }
+
+    public function test_it_picks_the_bundled_directory_per_platform()
+    {
+
+        $this->assertSame('linux-x86_64', ImageOptimizer::bundledDirectory('Linux', 'x86_64'));
+        $this->assertSame('linux-x86_64', ImageOptimizer::bundledDirectory('Linux', 'amd64'));
+        $this->assertSame('linux-aarch64', ImageOptimizer::bundledDirectory('Linux', 'aarch64'));
+        $this->assertSame('linux-aarch64', ImageOptimizer::bundledDirectory('Linux', 'arm64'));
+        $this->assertNull(ImageOptimizer::bundledDirectory('Linux', 'armv7l'));
+        $this->assertNull(ImageOptimizer::bundledDirectory('Linux', 'i686'));
+        $this->assertSame('darwin', ImageOptimizer::bundledDirectory('Darwin', 'arm64'));
+        $this->assertSame('darwin', ImageOptimizer::bundledDirectory('Darwin', 'x86_64'));
+        $this->assertSame('windows', ImageOptimizer::bundledDirectory('Windows', 'AMD64'));
+        $this->assertNull(ImageOptimizer::bundledDirectory('BSD', 'amd64'));
+
+    }
+
+    public function test_the_bundled_directory_of_this_platform_exists()
+    {
+
+        $directory = ImageOptimizer::bundledDirectory(PHP_OS_FAMILY, php_uname('m'));
+
+        if (!$directory) {
+
+            $this->markTestSkipped('No bundled binaries for ' . PHP_OS . ' ' . php_uname('m'));
+
+        }
+
+        $this->assertDirectoryExists(__DIR__ . '/../../bin/' . $directory);
+
+    }
+
+    public function test_it_searches_the_configured_paths()
+    {
+
+        $dir = sys_get_temp_dir() . '/imageoptimizer-paths-' . uniqid();
+        mkdir($dir);
+        file_put_contents($dir . '/imageoptimizer-probe', "#!/bin/sh\necho ok\n");
+        chmod($dir . '/imageoptimizer-probe', 0755);
+
+        $this->assertNull((new ImageOptimizer)->findBinary('imageoptimizer-probe'));
+
+        Settings::save(['paths' => [$dir]]);
+
+        $this->assertSame($dir . '/imageoptimizer-probe', (new ImageOptimizer)->findBinary('imageoptimizer-probe'));
+
+        unlink($dir . '/imageoptimizer-probe');
+        rmdir($dir);
+
+    }
+
+    public function test_it_reports_the_status_of_an_executable()
+    {
+
+        $optimizer = new ImageOptimizer;
+
+        $this->assertSame('found', $optimizer->status('head')['status']);
+        $this->assertNotNull($optimizer->status('head')['path']);
+        $this->assertSame(['path' => null, 'status' => 'missing'], $optimizer->status('definitely-not-installed-anywhere'));
 
     }
 
