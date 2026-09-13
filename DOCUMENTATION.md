@@ -72,7 +72,7 @@ brew install jpegoptim optipng pngquant gifsicle webp           # macOS
 
 | Platform | Bundled binaries |
 | --- | --- |
-| Linux x86_64 (glibc) | jpegoptim 1.5.6, pngquant 3.0.3, gifsicle 1.92, optipng 0.7.5, cwebp 1.6.0 |
+| Linux x86_64 | jpegoptim 1.5.6, pngquant 2.18.0, gifsicle 1.96, optipng 0.7.8, cwebp 1.6.0 (static) |
 | Linux ARM64 (aarch64: AWS Graviton, Hetzner CAX, Ampere) | jpegoptim 1.5.6, pngquant 2.18.0, gifsicle 1.96, optipng 0.7.8, cwebp 1.6.0 (static) |
 | macOS 11+, Apple Silicon and Intel (universal) | jpegoptim 1.5.6, pngquant 2.18.0, gifsicle 1.96, optipng 0.7.8, cwebp 1.6.0 |
 | Windows x64 | jpegoptim 1.5.6, pngquant 2.17.0, gifsicle 1.93, optipng 0.7.8, cwebp 1.6.0 |

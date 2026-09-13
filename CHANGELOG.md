@@ -11,7 +11,7 @@
 - Originals are kept: the first optimization stores a copy in the container's hidden `.meta/` folder, every later one starts from that copy. *Revert to original* and *Discard original* actions in the asset browser, a revert button in the asset editor, a *Keep originals* setting.
 - Settings form on the utility page for optimizing uploads, optimizing Glide, keeping originals and logging, stored in `resources/addons/statamic-image-optimizer.yaml` (Statamic's addon settings storage). Gated by the existing utility permission. The optimizer commands and search paths are editable there too, with a status dot per binary, behind the new *Edit ImageOptimizer optimizers* permission (super users have it).
 - WebP optimization with bundled cwebp 1.6.0 (Google's prebuilt binaries: Linux x86_64 and ARM64, macOS universal, Windows). Lossless and animated WebP files are skipped. The update script adds the cwebp entry to an imported 1.x config.
-- Bundled binaries for Linux ARM64 (aarch64): AWS Graviton, Hetzner CAX and Ampere hosts no longer silently skip optimization. Built statically in Alpine by `bin/build-linux.sh`, see `bin/BUILD.md`.
+- Bundled binaries for Linux ARM64 (aarch64): AWS Graviton, Hetzner CAX and Ampere hosts no longer silently skip optimization. Both Linux sets are now built statically in Alpine by `bin/build-linux.sh`, so they run on any distribution without a matching glibc or zlib; see `bin/BUILD.md`.
 - Savings report in the utility: per container and in total, with CSV export and a print-friendly page. Kept up to date: uploads, optimizations, reverts and deletions mark it stale and the utility rebuilds it on its next visit; bulk runs and the command rebuild it too.
 - `optimized_at` timestamp in the asset's `imageoptimizer` data.
 - Queue support: uploads and Glide images are optimized on the queue when the site has one (`QUEUE_CONNECTION` other than `sync`). The utility runs bulk optimizations as queued jobs and shows their progress; the asset editor button stays synchronous.
@@ -23,7 +23,7 @@
 ### Changed
 - Optimizing an image again starts from the kept original, so repeated runs and a lower quality never stack quality loss.
 - Optimizing one asset from its editor clears the Glide cache of that asset instead of the whole site.
-- Bundled binaries refreshed. macOS builds are universal (Apple Silicon and Intel), built from source and working on current macOS; the 2020 builds were killed by the OS. Linux x86_64 and Windows builds come from upstream releases. The 32-bit `linux-i686` and `darwin-i386` sets are gone; see `bin/BUILD.md` for provenance.
+- Bundled binaries refreshed. macOS builds are universal (Apple Silicon and Intel), built from source and working on current macOS; the 2020 builds were killed by the OS. Windows builds come from upstream releases. The 32-bit `linux-i686` and `darwin-i386` sets are gone; see `bin/BUILD.md` for provenance.
 - Bundled binaries are only used when they are executable; the executable bit is restored when possible.
 - The addon is built with Vite via `laravel-vite-plugin` and `@statamic/cms/vite-plugin`. The bundle shrank from 157 KB to 15 KB. Statamic republishes it when the addon is updated.
 
