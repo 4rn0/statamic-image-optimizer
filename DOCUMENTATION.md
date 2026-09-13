@@ -110,7 +110,7 @@ The sizes are stored on the Asset as `imageoptimizer`, so they are available in 
 
 ## Upgrading from 1.x
 1. `composer require 4rn0/statamic-image-optimizer:^2.0`. Statamic 6.5 or later is required. The control panel assets are republished by `statamic:install`; no `vendor:publish` needed.
-2. The configuration file is gone. If you had published `config/statamic/imageoptimizer.php`, the update runs a script that copies its values into `resources/addons/statamic-image-optimizer.yaml` once, adds the new cwebp optimizer for WebP, and tells you so in the console; the file is no longer read and can be deleted. Check the *Optimizers* section on the utility page afterwards. If the script did not run (it needs the `statamic:install` step in your `composer.json` scripts, which every Statamic site has), run `php please updates:run 1.3.0`.
+2. The configuration file is gone. If you had published `config/statamic/imageoptimizer.php`, the update runs a script that copies its values into `resources/addons/statamic-image-optimizer.yaml` once, adds the new cwebp optimizer for WebP, and tells you so in the console; the file is no longer read and can be deleted. Check the *Optimizers* section on the utility page afterwards. If the script did not run (it needs the `statamic:install` step in your `composer.json` scripts, which every Statamic site has), run `php please updates:run 1.3.0 --package=4rn0/statamic-image-optimizer`.
 3. `public/vendor/statamic-image-optimizer/js/` (the 1.x script) can be deleted.
 4. Existing `imageoptimizer` data on your assets is reused as-is. Images optimized under 1.x have no kept original and cannot be reverted.
 

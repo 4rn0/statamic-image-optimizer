@@ -29,4 +29,4 @@ Statamic 6.5 or later, PHP 8.3 with the fileinfo extension. Nothing else: the op
 
 ## ImageOptimizer is a commercial addon
 
-You can use it for free while in development, but it requires a license to use on a live site. Learn more or buy a license on [The Statamic Marketplace](https://statamic.com/marketplace/addons/imageoptimizer)! The full documentation is in [DOCUMENTATION.md](DOCUMENTATION.md).
+You can use it for free while in development, but it requires a license to use on a live site. Learn more or buy a license on [The Statamic Marketplace](https://statamic.com/addons/4rn0/imageoptimizer)! The full documentation is in [DOCUMENTATION.md](DOCUMENTATION.md).
