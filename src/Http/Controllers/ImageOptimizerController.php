@@ -54,6 +54,9 @@ class ImageOptimizerController extends CpController {
         $optimizer = new ImageOptimizer();
     	$asset = $optimizer->optimizeAsset($asset);
 
+        // Listeners write on their own instance, so read it back before serializing.
+        $asset = Asset::find($asset->id());
+
         $response = ['asset' => new AssetResource($asset)];
 
         if ($request->has('report')) {
@@ -82,6 +85,9 @@ class ImageOptimizerController extends CpController {
         $this->authorize('edit', $asset);
 
         $reverted = (new ImageOptimizer)->revertAsset($asset);
+
+        // Listeners write on their own instance, so read it back before serializing.
+        $asset = Asset::find($asset->id());
 
         return response()->json(['asset' => new AssetResource($asset), 'reverted' => $reverted]);
 

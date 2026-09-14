@@ -2,7 +2,7 @@
 
     <div class="text-sm leading-tight">
 
-        <div v-if="busy" class="flex items-center gap-2 text-gray-600 dark:text-gray-200">
+        <div v-if="busy" class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <ui-icon name="loading" class="size-4" />
             <span>{{ __('imageoptimizer::cp.' + busy) }}...</span>
         </div>
@@ -38,7 +38,7 @@
 
             <!-- Never optimized, or edited since -->
             <div v-else class="space-y-1">
-                <p class="text-gray-600 dark:text-gray-200">{{ __('imageoptimizer::cp.not-optimized') }}</p>
+                <p class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.not-optimized') }}</p>
                 <p v-if="data && data.original" class="text-xs text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.original-kept') }}</p>
                 <div class="flex gap-2 mt-2">
                     <ui-button
@@ -119,6 +119,9 @@ export default {
 
                 this.data = asset.values.imageoptimizer || null;
                 this.busy = null;
+
+                // New bytes, so other addons' fields on this asset are stale.
+                Statamic.$events.$emit('asset.saved', asset);
 
                 // Same URLs, new bytes.
                 bustImages([asset.preview, asset.thumbnail].filter(Boolean));
