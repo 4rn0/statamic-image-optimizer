@@ -39,7 +39,8 @@ class RevertImages extends Action
 
             $items->each(fn ($asset) => (new ImageOptimizer)->revertAsset($asset));
 
-            return;
+            // Same URLs, new bytes.
+            return ['callback' => ['imageOptimizer.reverted', ImageOptimizer::urls($items)]];
 
         }
 

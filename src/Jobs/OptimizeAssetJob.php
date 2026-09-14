@@ -34,6 +34,16 @@ class OptimizeAssetJob implements ShouldQueue
 
             }
 
+        } catch (\Throwable $e) {
+
+            if ($this->run) {
+
+                Cache::increment('imageoptimizer::run::' . $this->run . '::failed');
+
+            }
+
+            throw $e;
+
         } finally {
 
             if ($this->run) {

@@ -142,16 +142,23 @@ class Report
 
             }
 
+            // After an edit there are no statistics: ask the file.
+            if (!empty($data['original'])) {
+
+                $row['originals_size'] += $data['original_size'] ?? static::size($container, $data['original']);
+
+            }
+
+            // Edited, not optimized yet.
+            if (!isset($data['current_size'])) {
+
+                continue;
+
+            }
+
             $row['optimized']++;
             $row['original_size'] += $data['original_size'] ?? 0;
             $row['current_size'] += $data['current_size'] ?? 0;
-
-            // The stored copy is the original file, so its size is the original size
-            if (!empty($data['original'])) {
-
-                $row['originals_size'] += $data['original_size'] ?? 0;
-
-            }
 
             if (($data['optimized_at'] ?? 0) > $row['last_optimized_at']) {
 
@@ -162,6 +169,27 @@ class Report
         }
 
         return $row;
+
+    }
+
+
+    /**
+     * @param \Statamic\Contracts\Assets\AssetContainer $container
+     * @param string $path
+     * @return int
+     */
+    private static function size(AssetContainerContract $container, $path)
+    {
+
+        try {
+
+            return (int) $container->disk()->filesystem()->size($path);
+
+        } catch (\Throwable $e) {
+
+            return 0;
+
+        }
 
     }
 

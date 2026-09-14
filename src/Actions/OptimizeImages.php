@@ -17,9 +17,10 @@ class OptimizeImages extends Action
         return __('imageoptimizer::cp.action');
     }
 
+    // The asset editor has its own button in the panel.
     public function visibleTo($item)
     {
-        return $item instanceof Asset && $item->isImage();
+        return $item instanceof Asset && $item->isImage() && $this->context['view'] !== 'form';
     }
 
     public function authorize($user, $item)

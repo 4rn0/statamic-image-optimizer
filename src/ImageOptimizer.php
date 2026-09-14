@@ -31,8 +31,8 @@ class ImageOptimizer
     }
 
     /**
-     * Optimize Asset, save metadata. Keeps the original the first time, optimizes from that
-     * original every time after, so repeated runs never stack generation loss.
+     * Optimize Asset, save metadata. Keeps the original before the first smaller result and
+     * optimizes from it every time after, so repeated runs never stack generation loss.
      *
      * @param \Statamic\Contracts\Assets\Asset $asset
      * @return \Statamic\Contracts\Assets\Asset $asset
@@ -46,21 +46,31 @@ class ImageOptimizer
             $filesystem = $asset->disk()->filesystem();
             $settings = Settings::for($asset->container());
 
-            // The stored original is gone: forget it and go on with the current file
             if (isset($data['original']) && !$filesystem->exists($data['original'])) {
 
                 unset($data['original']);
 
             }
 
-            // Only bytes the addon never touched can serve as the original, and only once
-            if (!$data && $settings['originals']) {
+            // Another run on an optimized edit would only stack quality loss.
+            if (!empty($data['edited']) && isset($data['optimized_at'])) {
 
-                $data['original'] = $this->storeOriginal($asset);
+                return;
 
             }
 
-            $sizes = $this->optimizeFile($filesystem, $asset->path(), $settings, $data['original'] ?? null);
+            // An edit is optimized from its own bytes.
+            $source = empty($data['edited']) ? ($data['original'] ?? null) : null;
+
+            // Copied right before the first smaller result replaces the file, so AVIF and the like get no copy.
+            $keep = $settings['originals'] && !isset($data['original']) && empty($data['edited'])
+                && ($data['original_size'] ?? null) === ($data['current_size'] ?? null);
+
+            $sizes = $this->optimizeFile($filesystem, $asset->path(), $settings, $source, $keep ? function () use (&$data, $asset) {
+
+                $data['original'] = $this->storeOriginal($asset);
+
+            } : null);
 
             $data['original_size'] ??= $sizes['before'];
             $data['current_size'] = $sizes['after'];
@@ -125,6 +135,10 @@ class ImageOptimizer
 
             $filesystem->delete($original);
 
+            // An edit may have changed the dimensions.
+            $asset->cacheStore()->forget($asset->metaCacheKey());
+            $asset->writeMeta($asset->generateMeta());
+
             $asset->remove('imageoptimizer');
             $asset->save();
 
@@ -182,6 +196,27 @@ class ImageOptimizer
     }
 
     /**
+     * The URLs the control panel shows these Assets through, for cache busting after the bytes changed
+     *
+     * @param iterable $assets
+     * @return array
+     */
+    public static function urls($assets)
+    {
+
+        return collect($assets)
+            ->flatMap(fn ($asset) => [
+                $asset->container()->accessible() ? $asset->url() : $asset->thumbnailUrl(),
+                $asset->thumbnailUrl('small'),
+            ])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+    }
+
+    /**
      * Optimize Glide image if necessary
      *
      * @param string $path
@@ -205,7 +240,7 @@ class ImageOptimizer
 
         $store->forever($key, true);
 
-        // Register the marker in Statamic's per-asset manifest so Glide::clearAsset() forgets it too.
+        // Statamic's per-asset manifest, so Glide::clearAsset() forgets the marker too.
         if (str_starts_with($path, 'containers/')) {
 
             $manifest = 'asset::' . preg_replace('#^containers/([^/]+)/#', '$1::', dirname($path, 2));
@@ -243,9 +278,10 @@ class ImageOptimizer
      * @param string $path
      * @param array $settings
      * @param string|null $source
+     * @param callable|null $beforeReplace runs when a smaller result is about to replace the file
      * @return array ['before' => int, 'after' => int]
      */
-    private function optimizeFile(Filesystem $filesystem, $path, array $settings, $source = null)
+    private function optimizeFile(Filesystem $filesystem, $path, array $settings, $source = null, ?callable $beforeReplace = null)
     {
 
         $temp = tempnam(sys_get_temp_dir(), 'imageoptimizer');
@@ -261,6 +297,12 @@ class ImageOptimizer
             $after = filesize($temp);
 
             if ($after && $after < $before) {
+
+                if ($beforeReplace) {
+
+                    $beforeReplace();
+
+                }
 
                 $this->upload($temp, $filesystem, $path);
 
@@ -308,11 +350,12 @@ class ImageOptimizer
 
     /**
      * Run a callback while holding a lock on the Asset, so two jobs cannot store an already
-     * optimized file as the original. Skipped when the lock is taken or the cache has no locks.
+     * optimized file as the original. Waits for a running one; the lock key is shared with ImageEditor.
      *
      * @param \Statamic\Contracts\Assets\Asset $asset
      * @param callable $callback
-     * @return mixed null when skipped
+     * @return mixed
+     * @throws \Illuminate\Contracts\Cache\LockTimeoutException after 30 seconds
      */
     private function locked(Asset $asset, callable $callback)
     {
@@ -323,25 +366,7 @@ class ImageOptimizer
 
         }
 
-        $lock = Cache::lock('imageoptimizer::lock::' . $asset->id(), 120);
-
-        if (!$lock->get()) {
-
-            $this->log('ImageOptimizer: ' . $asset->id() . ' is locked, skipped');
-
-            return null;
-
-        }
-
-        try {
-
-            return $callback();
-
-        } finally {
-
-            $lock->release();
-
-        }
+        return Cache::lock('imageoptimizer::lock::' . $asset->id(), 120)->block(30, $callback);
 
     }
 
@@ -398,7 +423,7 @@ class ImageOptimizer
 
                 }
 
-                $command = str_replace(':file', escapeshellarg($path), $binary . ' ' . $optimizer['arguments']);
+                $command = str_replace(':file', escapeshellarg($path), escapeshellarg($binary) . ' ' . $optimizer['arguments']);
 
                 if (strpos($command, ':temp') !== false) {
 
@@ -580,7 +605,7 @@ class ImageOptimizer
     public function canRun($binary)
     {
 
-        $key = 'imageoptimizer::binary::' . md5($binary . @filemtime($binary) . @filesize($binary));
+        $key = 'imageoptimizer::binary::' . md5($binary . @filemtime($binary) . @filesize($binary) . @fileperms($binary));
 
         return Cache::rememberForever($key, fn () => $this->probe($binary));
 

@@ -6,5 +6,5 @@ tests/__fixtures__/dev-null/*
 !tests/__fixtures__/dev-null/.gitkeep
 .phpunit.cache
 resources/dist/hot
-build
+/build
 .claude

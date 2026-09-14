@@ -21,7 +21,7 @@ export default {
 
     computed: {
 
-        // Statuses are computed when the page loads; a freshly typed executable gets one after saving
+        // A newly typed executable has no status until saved.
         info() {
             return this.meta?.statuses?.[this.value] || { status: 'unknown', path: null };
         },

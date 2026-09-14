@@ -2,7 +2,7 @@
 
     <div class="flex flex-col gap-8">
 
-    <!-- Header and loader share one flex child, so the page gap does not open up between them -->
+    <!-- One flex child, or the page gap opens up between header and loader -->
     <div>
     <ui-header :title="__('imageoptimizer::cp.title')" icon="assets">
         <div v-if="!busy" class="flex gap-2 imageoptimizer-no-print">
@@ -118,12 +118,8 @@ export default {
 
         return {
 
-            // 'optimizing' while a run is going
             busy: null,
-
-            // the report as rebuilt by the server after a run or a refresh; the prop is the one from page load
             store: null,
-
             list: [],
             index: 0,
             total: 0,
@@ -160,7 +156,6 @@ export default {
 
         },
 
-        // With a queue: one request starts the run, then poll its progress
         startRun(only) {
 
             this.busy = 'optimizing';
@@ -193,6 +188,12 @@ export default {
 
                 else {
 
+                    if (response.data.failed) {
+
+                        Statamic.$toast.error(__('imageoptimizer::cp.progress-failed', { count: response.data.failed }));
+
+                    }
+
                     this.finish(response.data.report);
 
                 }
@@ -202,7 +203,6 @@ export default {
 
         },
 
-        // Without a queue: fetch the list, then optimize one image per request
         startLoop(only) {
 
             this.busy = 'optimizing';
@@ -224,7 +224,7 @@ export default {
         next() {
 
             const last = this.index === this.list.length - 1;
-            const url = cp_url('utilities/imageoptimizer/' + btoa(this.list[this.index]) + '?clearcache=1' + (last ? '&report=1' : ''));
+            const url = cp_url('utilities/imageoptimizer/' + utf8btoa(this.list[this.index]) + '?clearcache=1' + (last ? '&report=1' : ''));
 
             this.$axios.post(url).then(response => {
 
@@ -288,7 +288,6 @@ export default {
 
         },
 
-        // One container: no container column, no totals row
         multiple() {
 
             return this.figures.containers.length > 1;
@@ -315,7 +314,7 @@ export default {
 
         progress() {
 
-            // the item in progress counts, so the bar reaches 100% while the last one runs
+            // Count the image in progress, so the bar reaches 100%.
             return ((Math.min(this.index + 1, this.total) / this.total) * 100) + '%';
 
         }

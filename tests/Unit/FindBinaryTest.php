@@ -133,6 +133,26 @@ class FindBinaryTest extends TestCase
 
     }
 
+    public function test_a_binary_in_a_directory_with_a_space_runs()
+    {
+
+        $dir = sys_get_temp_dir() . '/image optimizer ' . uniqid();
+        mkdir($dir);
+        file_put_contents($dir . '/shrink', "#!/bin/sh\nhead -c 70 \"\$1\" > \"\$2\"\n");
+        chmod($dir . '/shrink', 0755);
+
+        Settings::save(['paths' => [$dir]]);
+        $this->useOptimizer('shrink', ':file :temp');
+
+        (new ImageOptimizer)->optimizeAsset($this->makeImage());
+
+        $this->assertSame(70, \Illuminate\Support\Facades\Storage::disk('test')->size('image.png'));
+
+        unlink($dir . '/shrink');
+        rmdir($dir);
+
+    }
+
     public function test_it_reports_the_status_of_an_executable()
     {
 

@@ -11,7 +11,6 @@
                 @click="save"
             />
         </ui-panel-header>
-        <!-- PublishTabs renders the blueprint section as a card of its own -->
         <PublishContainer
             ref="container"
             name="imageoptimizer-settings"
@@ -52,7 +51,6 @@ export default {
 
     methods: {
 
-        // What Statamic's own settings form does: patch, show errors, mark the container clean
         save() {
 
             this.saving = true;

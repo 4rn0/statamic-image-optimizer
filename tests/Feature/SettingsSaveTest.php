@@ -67,7 +67,6 @@ class SettingsSaveTest extends TestCase
         $this->assertFalse(Settings::get('assets'));
         $this->assertTrue(Settings::get('log'));
 
-        // Uploads are no longer optimized
         AssetUploaded::dispatch($this->makeImage(), 'image.png');
 
         $this->assertSame(1070, Storage::disk('test')->size('image.png'));

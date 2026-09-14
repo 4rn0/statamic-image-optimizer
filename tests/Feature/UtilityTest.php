@@ -407,6 +407,82 @@ class UtilityTest extends TestCase
 
     }
 
+    public function test_a_bulk_run_counts_the_images_that_failed()
+    {
+
+        $this->makeImage('a.png');
+        $this->makeImage('b.png');
+
+        $run = $this
+            ->actingAs($this->super())
+            ->postJson(cp_route('utilities.imageoptimizer.run'), ['only' => 'all'])
+            ->json('run');
+
+        // What a job does when the optimization throws
+        Cache::increment('imageoptimizer::run::' . $run . '::failed');
+
+        $this
+            ->actingAs($this->super())
+            ->getJson(cp_route('utilities.imageoptimizer.progress', $run))
+            ->assertOk()
+            ->assertJsonPath('done', 2)
+            ->assertJsonPath('failed', 1);
+
+    }
+
+    public function test_a_failing_job_is_counted_and_fails()
+    {
+
+        Storage::disk('test')->put('image.png', 'not an image');
+        \Statamic\Facades\AssetContainer::find('test')->makeAsset('image.png')->save();
+
+        $disk = Storage::disk('test');
+        $failing = \Mockery::mock($disk)->makePartial();
+        $failing->shouldReceive('readStream')->andThrow(new \RuntimeException('disk down'));
+        Storage::set('test', $failing);
+
+        try {
+
+            (new OptimizeAssetJob('test::image.png', 'run-1'))->handle();
+            $this->fail('The job should fail');
+
+        } catch (\RuntimeException $e) {
+
+            $this->assertSame(1, Cache::get('imageoptimizer::run::run-1::failed'));
+            $this->assertSame(1, Cache::get('imageoptimizer::run::run-1::done'));
+
+        }
+
+        Storage::set('test', $disk);
+
+    }
+
+    public function test_asset_ids_with_unicode_and_folders_are_decoded()
+    {
+
+        Storage::disk('test')->put('map/ünï 日本.png', $this->png());
+        \Statamic\Facades\AssetContainer::find('test')->makeAsset('map/ünï 日本.png')->save();
+
+        $this
+            ->actingAs($this->super())
+            ->postJson($this->optimizeUrl('test::map/ünï 日本.png'))
+            ->assertOk()
+            ->assertJsonPath('asset.data.values.imageoptimizer.current_size', 70);
+
+    }
+
+    public function test_the_csv_quotes_paths_with_commas_and_quotes()
+    {
+
+        (new ImageOptimizer)->optimizeAsset($this->makeImage('com,ma "quote".png'));
+
+        $lines = explode("\n", trim($this->actingAs($this->super())->get(cp_route('utilities.imageoptimizer.export'))->streamedContent()));
+
+        $this->assertStringStartsWith('test,"com,ma ""quote"".png",1070,70,', $lines[1]);
+        $this->assertSame('com,ma "quote".png', str_getcsv($lines[1])[1]);
+
+    }
+
     public function test_an_unknown_run_is_not_found()
     {
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.1.0
+
+### Changed
+- Works together with [Statamic Image Editor](https://statamic.com/addons/4rn0/image-editor). Both addons keep the same original in `.meta/` and share one *Revert to original*. An image edited by the editor is optimized from its edited bytes instead of from the kept original, so an optimization can never undo an edit; the editor marks such images with `imageoptimizer.edited`. An edited image is optimized once; optimizing it again does nothing until the next edit, so lossy optimizers like cwebp cannot stack quality loss.
+- Reverting regenerates the asset's meta (size, width, height), since an edit may have changed the dimensions, and the control panel shows the restored image right away: the listing, the asset editor preview and the thumbnails are refreshed after *Revert to original* and after the panel's buttons.
+- The asset editor panel and the report treat an image with a kept original but no statistics (edited, not optimized yet) as not optimized; the panel keeps its *Revert* button.
+- The original is copied right before the first smaller result replaces the file, instead of before every first run. Images that cannot get smaller (already optimized, AVIF, a missing or failing optimizer) no longer get a copy that doubles their storage; a later run that does shrink them still keeps the untouched file.
+- Two optimizations, or an optimization and a revert, of the same asset now wait for each other (up to 30 seconds) instead of the second one being skipped.
+
+### Fixed
+- The compiled control panel assets were excluded from the package by an unanchored `build` line in `.gitignore`; only the Vite manifest shipped, so the control panel could not load the addon.
+- The path of the optimizer binary is quoted in the shell command. A bundled binary under a path with a space (`Program Files`, a home folder with a space) silently failed.
+- Asset IDs are encoded with Statamic's `utf8btoa`, so the asset editor panel and the utility's per-image loop work for filenames with characters outside Latin-1.
+- A binary marked as broken is probed again after its permissions change, instead of staying red until the cache is cleared.
+- A bulk run reports how many images failed; the failed jobs stay in the queue's failed jobs.
+- The CSV export writes standard escaping; sizes below zero in the panel no longer render as `NaN`.
+
 ## 2.0.0
 
 ### Breaking

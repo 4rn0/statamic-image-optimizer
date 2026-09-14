@@ -127,8 +127,9 @@ class ImageOptimizerController extends CpController {
         abort_if($total === null, 404);
 
         $done = min((int) Cache::get('imageoptimizer::run::' . $run . '::done', 0), $total);
+        $failed = (int) Cache::get('imageoptimizer::run::' . $run . '::failed', 0);
 
-        $response = ['run' => $run, 'total' => $total, 'done' => $done];
+        $response = ['run' => $run, 'total' => $total, 'done' => $done, 'failed' => $failed];
 
         if ($done >= $total) {
 
@@ -158,11 +159,11 @@ class ImageOptimizerController extends CpController {
 
             $output = fopen('php://output', 'w');
 
-            fputcsv($output, ['container', 'path', 'original_size', 'current_size', 'saved', 'percent', 'optimized_at', 'original_kept']);
+            fputcsv($output, ['container', 'path', 'original_size', 'current_size', 'saved', 'percent', 'optimized_at', 'original_kept'], escape: '');
 
             foreach (Report::rows() as $row) {
 
-                fputcsv($output, $row);
+                fputcsv($output, $row, escape: '');
 
             }
 
@@ -213,7 +214,6 @@ class ImageOptimizerController extends CpController {
     private function settingsForm()
     {
 
-        // The effective values: what was saved, or the defaults until then
         $blueprint = Settings::blueprint($this->canEditOptimizers());
         $fields = $blueprint->fields()->addValues(collect(Settings::for())->only(Settings::EDITABLE)->all())->preProcess();
 

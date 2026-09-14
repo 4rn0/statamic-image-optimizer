@@ -26,9 +26,7 @@ use Statamic\Facades\Utility;
 class ServiceProvider extends AddonServiceProvider
 {
 
-    // No config file: every setting lives in the control panel (resources/settings.yaml is the form,
-    // Settings::DEFAULTS the defaults). Translations are loaded under the `imageoptimizer` namespace
-    // and published on request only.
+    // Settings live in the control panel; translations are loaded in bootAddon().
     protected $config = false;
     protected $translations = false;
 

@@ -17,8 +17,7 @@ abstract class TestCase extends AddonTestCase
 
     protected string $addonServiceProvider = ServiceProvider::class;
 
-    // A valid 70 byte 1x1 PNG followed by padding. Decoders ignore bytes after IEND, so an
-    // "optimizer" that strips the padding produces a smaller image that is still valid.
+    // 70 byte PNG plus padding: decoders ignore bytes after IEND, so stripping it stays valid.
     const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
     protected function getEnvironmentSetUp($app)

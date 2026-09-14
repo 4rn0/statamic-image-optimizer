@@ -64,7 +64,6 @@ class ImportPublishedConfigTest extends TestCase
         $this->assertSame(['/srv/bin'], Settings::get('paths'));
         $this->assertArrayNotHasKey('unknown', Addon::get(Settings::PACKAGE)->settings()->raw());
 
-        // The published JPEG optimizer stays; the defaults for uncovered mimetypes are appended
         $optimizers = Settings::get('optimizers');
 
         $this->assertSame('cjpeg', $optimizers[0]['executable']);

@@ -10,7 +10,7 @@ The settings form is on the utility page, *Utilities → Optimizer*, together wi
 | --- | --- | --- |
 | Optimize Assets | on | Optimize every image Asset when it is uploaded or reuploaded |
 | Optimize Glide | on | Optimize every Glide manipulation when it is generated |
-| Keep originals | on | Keep a copy of every image before its first optimization, so it can be reverted. See *Originals and revert* |
+| Keep originals | on | Keep a copy of every image before it is made smaller for the first time, so it can be reverted. See *Originals and revert* |
 | Log optimizations | off | Write every optimizer command and its output to the Laravel log |
 
 The settings are stored in `resources/addons/statamic-image-optimizer.yaml`. Commit and deploy that file like the rest of `resources/`. Until you save the form, the defaults apply.
@@ -24,13 +24,15 @@ The settings are stored in `resources/addons/statamic-image-optimizer.yaml`. Com
 
 **Only smaller results are kept.** An optimizer's output is written back only when it is smaller than the input; otherwise the file is left alone.
 
-**Originals and revert.** The first time an image is optimized, a copy of the untouched file is kept in the hidden `.meta/` folder of its container, next to Statamic's own metadata, on the same disk (local or S3). Every later optimization starts from that copy, so optimizing again, or again with a lower quality in the arguments, never stacks quality loss.
+**Originals and revert.** The first time an optimization makes an image smaller, a copy of the untouched file is kept in the hidden `.meta/` folder of its container, next to Statamic's own metadata, on the same disk (local or S3). Every later optimization starts from that copy, so optimizing again, or again with a lower quality in the arguments, never stacks quality loss. Images that do not get smaller (already optimized, AVIF, a missing optimizer) get no copy: their file is untouched, so there is nothing to revert to.
 
 - **Revert** puts the original back, forgets the statistics and clears the Glide cache of that image. Available in the asset editor panel and as the *Revert to original* action in the asset browser.
 - **Discard original** deletes the copy and keeps the statistics, to free storage. Action in the asset browser.
 - Renaming, moving and deleting images is handled; reuploading an image replaces its original.
 
-Keeping originals costs as much storage as the original images. Turn *Keep originals* off in the settings if you do not want that. Images optimized before version 2.0 have no stored original and cannot be reverted; they never get one, because only a file the addon has not touched yet is kept. On a local disk the copies are inside the public assets folder like the `.meta` files themselves, with random names.
+**With Statamic Image Editor.** The [Image Editor](https://statamic.com/addons/4rn0/image-editor) keeps the same original in the same place and offers the same revert, so an image has one original and one *Revert to original* whichever addon you use. An edited image is optimized once, from its edited bytes and never from the kept original; optimizing it again does nothing until the next edit. *Revert to original* undoes the edit and the optimization together and puts the uploaded file back.
+
+Keeping originals costs as much storage as the images that were made smaller. Turn *Keep originals* off in the settings if you do not want that. Images optimized before version 2.0 have no stored original and cannot be reverted; they never get one, because only a file the addon has not touched yet is kept. On a local disk the copies are inside the public assets folder like the `.meta` files themselves, with random names.
 
 ## Using it
 **Asset editor.** Every image Asset gets a small *ImageOptimizer* panel in its editor showing the original size and the gain, whether the original is kept, and buttons to optimize it (again) and to revert it. The buttons need permission to edit the asset and the *Access ImageOptimizer utility* permission. This panel always works immediately, also on sites with a queue, so you see the result.
@@ -55,7 +57,7 @@ Statamic asset containers are not tied to sites, so the report is per container;
 ## Formats and binaries
 | Format | Tool | What happens |
 | --- | --- | --- |
-| JPEG | [jpegoptim](https://github.com/tjko/jpegoptim) | Progressive, recompressed to quality 85 when above it (`-m85` in its arguments), metadata stripped |
+| JPEG | [jpegoptim](https://github.com/tjko/jpegoptim) | Progressive, recompressed to quality 85 when above it (`-m85` in its arguments). EXIF and other metadata are kept; add `--strip-all` to its arguments to drop them |
 | PNG | [pngquant](https://pngquant.org/) then [optipng](http://optipng.sourceforge.net/) | Palette reduction, then lossless recompression |
 | GIF | [gifsicle](http://www.lcdf.org/gifsicle/) | Lossless recompression, animations included |
 | WebP | [cwebp](https://developers.google.com/speed/webp/docs/cwebp) | Re-encoded at quality 85 (`-q 85` in its arguments). Lossless and animated WebP files are left alone |

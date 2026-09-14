@@ -4,12 +4,11 @@
 
         <div class="flex flex-col gap-8">
 
-            <!-- Renders the page header too: the optimize buttons live there, next to the title -->
             <image_optimizer-utility :report="report" :queued="queued"></image_optimizer-utility>
 
             <image_optimizer-settings :settings="settings" class="imageoptimizer-no-print"></image_optimizer-settings>
 
-            <!-- Users who can edit the optimizers see their status in the grid instead -->
+            <!-- Editors see the statuses in the settings grid -->
             <ui-panel v-if="!settings.values.optimizers" class="imageoptimizer-no-print">
                 <ui-panel-header>
                     <ui-heading>{{ __('imageoptimizer::cp.optimizers') }}</ui-heading>

@@ -33,7 +33,7 @@ class OptimizeAsset implements ShouldQueue
 
         $optimizer = new ImageOptimizer();
 
-        // A reupload is a new file: drop the old original and start the statistics over.
+        // A reupload is a new file.
         if ($event instanceof AssetReuploaded) {
 
             $optimizer->deleteOriginal($asset);

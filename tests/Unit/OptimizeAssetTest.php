@@ -96,6 +96,38 @@ class OptimizeAssetTest extends TestCase
 
     }
 
+    public function test_a_failing_disk_leaves_the_file_and_the_statistics_alone()
+    {
+
+        $this->makeImage();
+
+        $before = count(glob(sys_get_temp_dir() . '/imageoptimizer*'));
+
+        // The write back fails, as a remote disk would
+        $disk = Storage::disk('test');
+        $failing = \Mockery::mock($disk)->makePartial();
+        $failing->shouldReceive('writeStream')->andThrow(new \RuntimeException('disk down'));
+        Storage::set('test', $failing);
+
+        try {
+
+            (new ImageOptimizer)->optimizeAsset(Asset::find('test::image.png'));
+            $this->fail('The failure should surface');
+
+        } catch (\RuntimeException $e) {
+
+            $this->assertSame('disk down', $e->getMessage());
+
+        }
+
+        Storage::set('test', $disk);
+
+        $this->assertSame($this->png(), Storage::disk('test')->get('image.png'));
+        $this->assertNull(Asset::find('test::image.png')->get('imageoptimizer'));
+        $this->assertSame($before, count(glob(sys_get_temp_dir() . '/imageoptimizer*')));
+
+    }
+
     public function test_it_cleans_up_temp_files()
     {
 

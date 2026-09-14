@@ -9,7 +9,7 @@
 
         <div v-else>
 
-            <div v-if="data" class="space-y-1">
+            <div v-if="data && data.original_size" class="space-y-1">
                 <div class="text-gray-700 dark:text-gray-200">
                     <span class="text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.original') }}:</span>
                     <span class="font-medium">{{ getBytes(data.original_size) }}</span>
@@ -36,13 +36,23 @@
                 </div>
             </div>
 
+            <!-- Never optimized, or edited since -->
             <div v-else class="space-y-1">
                 <p class="text-gray-600 dark:text-gray-200">{{ __('imageoptimizer::cp.not-optimized') }}</p>
-                <ui-button
-                    size="sm"
-                    @click="optimize"
-                    :text="__('imageoptimizer::cp.optimize')"
-                />
+                <p v-if="data && data.original" class="text-xs text-gray-500 dark:text-gray-400">{{ __('imageoptimizer::cp.original-kept') }}</p>
+                <div class="flex gap-2 mt-2">
+                    <ui-button
+                        size="sm"
+                        @click="optimize"
+                        :text="__('imageoptimizer::cp.optimize')"
+                    />
+                    <ui-button
+                        v-if="data && data.original"
+                        size="sm"
+                        @click="revert"
+                        :text="__('imageoptimizer::cp.revert')"
+                    />
+                </div>
             </div>
 
         </div>
@@ -54,6 +64,7 @@
 <script>
 
 import { useBytes } from '../composables/useBytes.js';
+import { bustImages } from '../addon.js';
 import { FieldtypeMixin as Fieldtype } from '@statamic/cms';
 
 export default {
@@ -69,7 +80,7 @@ export default {
 
         return {
 
-            // The field is computed: the editor never saves it, so this local copy is the truth
+            // Computed field: the editor never saves it back.
             data: this.value || null,
 
             busy: null
@@ -82,13 +93,13 @@ export default {
 
         optimize() {
 
-            this.request('optimizing', cp_url('utilities/imageoptimizer/' + btoa(this.config.asset) + '?clearcache=1'));
+            this.request('optimizing', cp_url('utilities/imageoptimizer/' + utf8btoa(this.config.asset) + '?clearcache=1'));
 
         },
 
         revert() {
 
-            this.request('reverting', cp_url('utilities/imageoptimizer/' + btoa(this.config.asset) + '/revert'), response => {
+            this.request('reverting', cp_url('utilities/imageoptimizer/' + utf8btoa(this.config.asset) + '/revert'), response => {
 
                 if (!response.data.reverted) {
                     Statamic.$toast.error(__('imageoptimizer::cp.revert-missing'));
@@ -104,8 +115,13 @@ export default {
 
             this.$axios.post(url).then(response => {
 
-                this.data = response.data.asset.data.values.imageoptimizer || null;
+                const asset = response.data.asset.data;
+
+                this.data = asset.values.imageoptimizer || null;
                 this.busy = null;
+
+                // Same URLs, new bytes.
+                bustImages([asset.preview, asset.thumbnail].filter(Boolean));
 
                 if (then) then(response);
 

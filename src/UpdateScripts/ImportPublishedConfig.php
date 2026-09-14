@@ -33,7 +33,7 @@ class ImportPublishedConfig extends UpdateScript
 
         $values = collect(require $path)->only(Settings::EDITABLE)->all();
 
-        // Optimizers added since 1.x (cwebp) for mimetypes the published list does not cover
+        // cwebp is new since 1.x.
         if (isset($values['optimizers'])) {
 
             $covered = collect($values['optimizers'])->pluck('mimetype');

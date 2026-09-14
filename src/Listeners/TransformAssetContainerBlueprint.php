@@ -13,8 +13,7 @@ class TransformAssetContainerBlueprint
     	if (request()->route()?->getName() === 'statamic.cp.assets.show' && $event->asset?->isImage())
         {
 
-            // Computed: the editor shows the field but never saves it back, so saving the asset
-            // after optimizing in the panel cannot write stale statistics over the fresh ones.
+            // Computed, so saving the editor cannot write stale statistics back.
     		$event->blueprint->ensureField('imageoptimizer', [
 
     			'type' => 'image_optimizer',

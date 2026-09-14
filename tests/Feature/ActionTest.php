@@ -32,6 +32,9 @@ class ActionTest extends TestCase
         $this->assertTrue(Action::for($image)->map->handle()->contains('optimize_images'));
         $this->assertFalse(Action::for($doc)->map->handle()->contains('optimize_images'));
 
+        $this->assertFalse(Action::for($image, ['view' => 'form'])->map->handle()->contains('optimize_images'));
+        $this->assertTrue(Action::forBulk(collect([$image, $this->makeImage('b.png')]))->map->handle()->contains('optimize_images'));
+
     }
 
     public function test_it_requires_permission_to_edit_the_asset()
@@ -105,7 +108,10 @@ class ActionTest extends TestCase
 
         (new ImageOptimizer)->optimizeAsset($this->makeImage());
 
-        $this->assertNull((new RevertImages)->run(collect([Asset::find('test::image.png')]), []));
+        $result = (new RevertImages)->run(collect([Asset::find('test::image.png')]), []);
+
+        $this->assertSame('imageOptimizer.reverted', $result['callback'][0]);
+        $this->assertCount(2, $result['callback'][1]);
 
         $this->assertSame(1070, Storage::disk('test')->size('image.png'));
         $this->assertNull(Asset::find('test::image.png')->get('imageoptimizer'));
