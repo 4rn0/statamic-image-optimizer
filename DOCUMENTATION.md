@@ -111,7 +111,7 @@ The sizes are stored on the Asset as `imageoptimizer`, so they are available in 
 ```
 
 ## CP Bar
-With CP Bar (`4rn0/statamic-cp-bar`) 1.1 or later installed, the bar shows how many images the current entry or term has, with their savings, and a button that optimizes the new ones, or all of them again once every image is optimized. It counts the images in the entry's own fields, sets included, and the images in its text, found by their URL in markdown, bard or HTML. On an overview, such as the page a collection is mounted on, a term, or any page without images of its own, it looks at the page as a visitor gets it instead: the images in its `<main>`, Glide URLs included. It shows for users who can access the Optimizer utility, and optimizes only the images they can edit.
+With CP Bar (`4rn0/statamic-cp-bar`) 1.0 or later installed, the bar shows how many images the current entry or term has, with their savings, and a button that optimizes the new ones, or all of them again once every image is optimized. It counts the images in the entry's own fields, sets included, and the images in its text, found by their URL in markdown, bard or HTML. On an overview, such as the page a collection is mounted on, a term, or any page without images of its own, it looks at the page as a visitor gets it instead: the images in its `<main>`, Glide URLs included. It shows for users who can access the Optimizer utility, and optimizes only the images they can edit.
 
 ## Upgrading from 1.x
 1. `composer require 4rn0/statamic-image-optimizer:^2.0`. Statamic 6.5 or later is required. The control panel assets are republished by `statamic:install`; no `vendor:publish` needed.
