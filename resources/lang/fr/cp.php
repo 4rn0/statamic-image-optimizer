@@ -55,6 +55,7 @@ return [
     'action' => "Optimiser l'image",
     'queued' => "Mis en file d'attente pour optimisation",
     'optimize-again' => 'Optimiser à nouveau',
+    'optimize-again-confirm' => 'Optimiser à nouveau cette image ? L\'original conservé sert de point de départ, s\'il existe.|Optimiser à nouveau :count images ? Les originaux conservés servent de point de départ, s\'ils existent.',
     'revert' => 'Restaurer',
     'reverting' => 'Restauration',
     'original-kept' => 'L\'original est conservé, cette image peut être restaurée',
@@ -66,5 +67,9 @@ return [
     'discard-action' => 'Supprimer l\'original',
     'discard-confirm' => 'Supprimer l\'original conservé de cette image ? Elle ne pourra plus être restaurée.|Supprimer les originaux conservés de :count images ? Elles ne pourront plus être restaurées.',
     'discard-queued' => 'Suppression mise en file d\'attente',
-    
+
+    'bar-optimized' => ':optimized sur :images optimisées',
+    'bar-saved' => ':saved économisés (:percent%)',
+    'bar-optimize' => 'Optimiser :count image|Optimiser :count images',
+
 ];

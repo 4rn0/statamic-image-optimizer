@@ -55,6 +55,7 @@ return [
     'action' => "Görseli optimize et",
     'queued' => "Optimizasyon için sıraya alındı",
     'optimize-again' => 'Yeniden optimize et',
+    'optimize-again-confirm' => 'Bu görsel yeniden optimize edilsin mi? Varsa saklanan orijinalden başlanır.|:count görsel yeniden optimize edilsin mi? Varsa saklanan orijinallerden başlanır.',
     'revert' => 'Geri al',
     'reverting' => 'Geri alınıyor',
     'original-kept' => 'Orijinal saklandı, bu görsel geri alınabilir',
@@ -66,5 +67,9 @@ return [
     'discard-action' => 'Orijinali sil',
     'discard-confirm' => 'Bu görselin saklanan orijinali silinsin mi? Artık geri alınamaz.|:count görselin saklanan orijinalleri silinsin mi? Artık geri alınamazlar.',
     'discard-queued' => 'Silme kuyruğa eklendi',
+
+    'bar-optimized' => ':images görselden :optimized optimize edildi',
+    'bar-saved' => ':saved tasarruf (:percent%)',
+    'bar-optimize' => ':count görseli optimize et|:count görseli optimize et',
 
 ];

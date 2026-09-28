@@ -55,6 +55,7 @@ return [
     'action' => "Afbeelding optimaliseren",
     'queued' => "In de wachtrij gezet voor optimalisatie",
     'optimize-again' => 'Opnieuw optimaliseren',
+    'optimize-again-confirm' => 'Deze afbeelding opnieuw optimaliseren? Het bewaarde origineel is het uitgangspunt, als dat er is.|:count afbeeldingen opnieuw optimaliseren? De bewaarde originelen zijn het uitgangspunt, waar die er zijn.',
     'revert' => 'Terugdraaien',
     'reverting' => 'Bezig met terugdraaien',
     'original-kept' => 'Het origineel is bewaard, deze afbeelding kan worden teruggedraaid',
@@ -66,5 +67,9 @@ return [
     'discard-action' => 'Origineel verwijderen',
     'discard-confirm' => 'Het bewaarde origineel van deze afbeelding verwijderen? Terugdraaien is daarna niet meer mogelijk.|De bewaarde originelen van :count afbeeldingen verwijderen? Terugdraaien is daarna niet meer mogelijk.',
     'discard-queued' => 'In de wachtrij gezet om te verwijderen',
+
+    'bar-optimized' => ':optimized van :images geoptimaliseerd',
+    'bar-saved' => ':saved bespaard (:percent%)',
+    'bar-optimize' => ':count afbeelding optimaliseren|:count afbeeldingen optimaliseren',
 
 ];

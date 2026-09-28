@@ -55,6 +55,7 @@ return [
     'action' => "Optimize image",
     'queued' => "Queued for optimization",
     'optimize-again' => 'Optimize again',
+    'optimize-again-confirm' => 'Optimize this image again? It starts from the kept original, if there is one.|Optimize :count images again? They start from their kept originals, where there are any.',
     'revert' => 'Revert',
     'reverting' => 'Reverting',
     'original-kept' => 'The original is kept, this image can be reverted',
@@ -66,5 +67,9 @@ return [
     'discard-action' => 'Discard original',
     'discard-confirm' => 'Delete the stored original of this image? It can no longer be reverted.|Delete the stored originals of :count images? They can no longer be reverted.',
     'discard-queued' => 'Queued for discarding',
-    
+
+    'bar-optimized' => ':optimized of :images optimized',
+    'bar-saved' => ':saved saved (:percent%)',
+    'bar-optimize' => 'Optimize :count image|Optimize :count images',
+
 ];

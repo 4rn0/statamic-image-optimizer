@@ -81,6 +81,10 @@ class ServiceProvider extends AddonServiceProvider
 		$this->createUtility();
 		$this->registerPermission();
 
+        if (class_exists(\Arnohoogma\StatamicCpBar\Facades\CpBar::class)) {
+            \Arnohoogma\StatamicCpBar\Facades\CpBar::extend(CpBar::class);
+        }
+
     }
 
     private function registerPermission()

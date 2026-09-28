@@ -26,6 +26,12 @@
         "orchestra/testbench": "^10.8",
         "phpunit/phpunit": "^11.5"
     },
+    "suggest": {
+        "4rn0/statamic-cp-bar": "Shows the images of the current page and their savings in CP Bar, with buttons to optimize them"
+    },
+    "conflict": {
+        "4rn0/statamic-cp-bar": "<1.1"
+    },
     "autoload": {
         "psr-4": {
             "Arnohoogma\\StatamicImageOptimizer\\": "src"
